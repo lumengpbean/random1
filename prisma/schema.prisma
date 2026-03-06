@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostState {
+  draft
+  submitted
+  pending_review
+  published_preprint
+  promoted_to_journal
+  rejected
+  archived
+  removed
+}
+
+enum ReportStatus {
+  open
+  in_review
+  resolved
+  dismissed
+}
+
+model User {
+  id              String   @id @default(cuid())
+  name            String?
+  email           String   @unique
+  emailVerified   DateTime?
+  image           String?
+  passwordHash    String?
+  locale          String   @default("en")
+  role            String   @default("user")
+  bio             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  posts           Post[]
+  votes           Vote[]
+  comments        Comment[]
+  reports         Report[] @relation("Reporter")
+  moderationItems ModerationAction[]
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  summary     String
+  content     String
+  locale      String
+  isBilingual Boolean   @default(false)
+  state       PostState @default(draft)
+  featured    Boolean   @default(false)
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  tags       PostTag[]
+  votes      Vote[]
+  comments   Comment[]
+  reports    Report[]
+  issueLinks IssuePost[]
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  posts PostTag[]
+}
+
+model PostTag {
+  postId String
+  tagId  String
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  value     Int      @default(1)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  reports Report[]
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reason     String
+  details    String?
+  status     ReportStatus @default(open)
+  reporterId String
+  postId     String?
+  commentId  String?
+  createdAt  DateTime     @default(now())
+  resolvedAt DateTime?
+
+  reporter User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  post     Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  comment  Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  actions  ModerationAction[]
+}
+
+model ModerationAction {
+  id          String   @id @default(cuid())
+  action      String
+  notes       String?
+  moderatorId String
+  reportId    String?
+  postId      String?
+  createdAt   DateTime @default(now())
+  moderator   User     @relation(fields: [moderatorId], references: [id], onDelete: Cascade)
+  report      Report?  @relation(fields: [reportId], references: [id], onDelete: SetNull)
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  locale    String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model IssueCollection {
+  id        String     @id @default(cuid())
+  title     String
+  locale    String
+  createdAt DateTime   @default(now())
+  posts     IssuePost[]
+}
+
+model IssuePost {
+  issueId String
+  postId  String
+  order   Int
+  issue   IssueCollection @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  post    Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, postId])
+}
+
+model SiteSetting {
+  key   String @id
+  value String
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([sessionToken])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
