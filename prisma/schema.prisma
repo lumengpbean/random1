@@ -29,12 +29,17 @@ model User {
   id              String   @id @default(cuid())
   name            String?
   email           String   @unique
+  emailVerified   DateTime?
+  image           String?
   passwordHash    String?
   locale          String   @default("en")
   role            String   @default("user")
   bio             String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
   posts           Post[]
   votes           Vote[]
   comments        Comment[]
@@ -57,11 +62,12 @@ model Post {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   publishedAt DateTime?
-  tags        PostTag[]
-  votes       Vote[]
-  comments    Comment[]
-  reports     Report[]
-  issueLinks  IssuePost[]
+
+  tags       PostTag[]
+  votes      Vote[]
+  comments   Comment[]
+  reports    Report[]
+  issueLinks IssuePost[]
 }
 
 model Tag {
@@ -99,22 +105,25 @@ model Comment {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  reports Report[]
 }
 
 model Report {
-  id            String       @id @default(cuid())
-  reason        String
-  details       String?
-  status        ReportStatus @default(open)
-  reporterId    String
-  postId        String?
-  commentId     String?
-  createdAt     DateTime     @default(now())
-  resolvedAt    DateTime?
-  reporter      User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  post          Post?        @relation(fields: [postId], references: [id], onDelete: SetNull)
-  comment       Comment?     @relation(fields: [commentId], references: [id], onDelete: SetNull)
-  actions       ModerationAction[]
+  id         String       @id @default(cuid())
+  reason     String
+  details    String?
+  status     ReportStatus @default(open)
+  reporterId String
+  postId     String?
+  commentId  String?
+  createdAt  DateTime     @default(now())
+  resolvedAt DateTime?
+
+  reporter User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  post     Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  comment  Comment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  actions  ModerationAction[]
 }
 
 model ModerationAction {
