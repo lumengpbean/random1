@@ -8,15 +8,15 @@
 :root {
   --color-bg: #eee0f3;
   --color-bg-card: #ffffff;
-  --color-text: #3a2e2a;
-  --color-text-light: #7a6b63;
-  --color-accent: #b07a56;
-  --color-accent-light: #d4a87c;
-  --color-border: #e6ddd5;
-  --color-tag-red: #c4544a;
-  --color-tag-brown: #a07850;
-  --color-tag-rose: #b8636b;
-  --color-hero-bg: #f5efe8;
+  --color-text: #2e2535;
+  --color-text-light: #6b5f78;
+  --color-accent: #8b5ca0;
+  --color-accent-light: #b48cc8;
+  --color-border: #d8c8e6;
+  --color-tag-red: #9b4dca;
+  --color-tag-brown: #7c5cbf;
+  --color-tag-rose: #a855a0;
+  --color-hero-bg: #e8d8f0;
   --font-serif: 'Noto Serif SC', 'Songti SC', serif;
   --font-display: 'Playfair Display', 'Noto Serif SC', serif;
 }
@@ -306,17 +306,17 @@ a:hover {
 
 .tag-red {
   color: var(--color-tag-red);
-  background: #fdf0ef;
+  background: #f3e8fc;
 }
 
 .tag-brown {
   color: var(--color-tag-brown);
-  background: #faf3eb;
+  background: #ede4f7;
 }
 
 .tag-rose {
   color: var(--color-tag-rose);
-  background: #fdf0f2;
+  background: #f5e8f5;
 }
 
 .card-title {
