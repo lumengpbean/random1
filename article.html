@@ -193,6 +193,13 @@
       } else {
         // Essay type: show text content
         document.getElementById('article-body').innerHTML = data.content || '<p>暂无内容</p>';
+
+        // Show file link for essays (e.g. cloud drive link)
+        if (data.file_url) {
+          var essayUrl = extractUrl(data.file_url);
+          document.getElementById('article-body').innerHTML +=
+            '<p style="margin-top:1.5rem;"><a href="' + escapeHtml(essayUrl) + '" target="_blank" style="color:var(--color-accent); text-decoration:none; font-weight:600;">📂 查看原稿文件</a></p>';
+        }
       }
 
       document.getElementById('article-loading').style.display = 'none';
