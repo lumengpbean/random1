@@ -3,25 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期刊审核后台 - 内部版</title>
+    <title>刊见审核后台 - 内部版</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; }
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --accent: #a14b92; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .card { background: white; max-width: 900px; margin: 20px auto; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card { background: white; max-width: 960px; margin: 20px auto; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .hidden { display: none; }
-        .article-item { border-bottom: 1px solid #eee; padding: 20px 0; display: flex; justify-content: space-between; align-items: center; }
+        .article-item { border-bottom: 1px solid #eee; padding: 20px 0; }
+        .article-item-top { display: flex; justify-content: space-between; align-items: center; }
         .article-info h4 { margin: 0 0 8px 0; color: var(--primary); }
-        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s; color: white; }
-        .btn-approve { background: var(--success); margin-right: 10px; }
+        .article-info p { margin: 4px 0; font-size: 0.9rem; color: #666; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s; color: white; font-size: 0.9rem; }
+        .btn-approve { background: var(--success); }
         .btn-reject { background: var(--danger); }
+        .btn-edit { background: var(--accent); }
+        .btn-back { background: #95a5a6; }
+        .btn-group { display: flex; gap: 8px; flex-shrink: 0; }
         .login-box { text-align: center; padding: 40px 0; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; }
+        textarea { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-family: 'Noto Serif SC', serif; font-size: 1rem; line-height: 1.8; resize: vertical; }
+        label { display: block; font-weight: 600; margin-top: 12px; margin-bottom: 2px; color: #333; font-size: 0.9rem; }
+        .editor-preview { background: #faf8f5; border: 1px solid #e5ddd4; border-radius: 8px; padding: 2rem; margin-top: 12px; font-family: 'Noto Serif SC', serif; line-height: 2; }
+        .editor-preview p { margin-bottom: 1rem; }
+        .editor-preview h2 { font-size: 1.3rem; color: #a14b92; margin: 2rem 0 0.8rem; }
+        .editor-preview blockquote { border-left: 3px solid #a14b92; padding-left: 1rem; color: #666; margin: 1rem 0; }
+        .editor-preview hr { border: none; border-top: 1px solid #e5ddd4; margin: 2rem 0; }
+        .tab-bar { display: flex; gap: 0; margin-bottom: 12px; }
+        .tab { padding: 8px 20px; border: 1px solid #ddd; cursor: pointer; font-size: 0.9rem; background: #f5f5f5; }
+        .tab:first-child { border-radius: 6px 0 0 6px; }
+        .tab:last-child { border-radius: 0 6px 6px 0; }
+        .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .format-hint { font-size: 0.8rem; color: #999; margin-top: 4px; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-rejected { background: #fce4ec; color: #c62828; }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div class="card">
+    <!-- Login -->
     <div id="auth-ui">
         <div class="login-box">
             <h2>审核员登录</h2>
@@ -31,6 +56,7 @@
         </div>
     </div>
 
+    <!-- Article List -->
     <div id="admin-ui" class="hidden">
         <div style="display:flex; justify-content: space-between; align-items: center;">
             <h2>待审核稿件池</h2>
@@ -38,15 +64,68 @@
         </div>
         <div id="article-list">正在同步云端数据...</div>
     </div>
+
+    <!-- Editor -->
+    <div id="editor-ui" class="hidden">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:16px;">
+            <h2 id="editor-title">编辑稿件</h2>
+            <button class="btn btn-back" onclick="closeEditor()">返回列表</button>
+        </div>
+
+        <label>标题</label>
+        <input type="text" id="edit-title">
+
+        <label>作者</label>
+        <input type="text" id="edit-author">
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+                <label>标签（如：散文、论文、随笔）</label>
+                <input type="text" id="edit-tags" placeholder="散文">
+            </div>
+            <div>
+                <label>标签颜色</label>
+                <select id="edit-tag-color">
+                    <option value="brown">棕色 (默认)</option>
+                    <option value="red">紫红</option>
+                    <option value="rose">玫瑰</option>
+                </select>
+            </div>
+        </div>
+
+        <label>摘要（显示在文库卡片上）</label>
+        <textarea id="edit-excerpt" rows="2" style="font-family:'Segoe UI',sans-serif;"></textarea>
+
+        <label>原稿文件</label>
+        <div id="edit-file-link" style="margin:6px 0;"></div>
+
+        <label>正文内容</label>
+        <p class="format-hint">直接粘贴文字，空行分段。# 开头 = 小标题，> 开头 = 引用，--- = 分割线，**文字** = 加粗</p>
+
+        <div class="tab-bar">
+            <div class="tab active" onclick="switchTab('write')">编辑</div>
+            <div class="tab" onclick="switchTab('preview')">预览</div>
+        </div>
+
+        <textarea id="edit-content" rows="20" style="display:block;"></textarea>
+        <div id="content-preview" class="editor-preview" style="display:none;"></div>
+
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button class="btn btn-approve" onclick="publishArticle()">保存并发布</button>
+            <button class="btn" style="background:#3498db;" onclick="saveAsDraft()">仅保存（不发布）</button>
+            <button class="btn btn-reject" onclick="rejectArticle()">驳回</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    // 配置你的项目信息
     const SUPABASE_URL = 'https://zcpgslkimjjnmwatmkje.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6';
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 检查登录态
+    let currentArticleId = null;
+
+    // Auth
     async function checkAuth() {
         const { data: { user } } = await sb.auth.getUser();
         if (user) {
@@ -56,7 +135,6 @@
         }
     }
 
-    // 登录逻辑
     async function signIn() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -65,49 +143,186 @@
         else location.reload();
     }
 
-    // 获取待处理文章
+    async function signOut() {
+        await sb.auth.signOut();
+        location.reload();
+    }
+
+    // Fetch articles
     async function fetchPending() {
         const { data, error } = await sb
             .from('articles')
             .select('*')
-            .neq('status', 'approved') // 抓取 pending 和 rejected
+            .neq('status', 'approved')
             .order('created_at', { ascending: false });
 
         const container = document.getElementById('article-list');
-        if (data.length === 0) {
+        if (error) {
+            container.innerHTML = "<p style='color:red'>读取失败: " + error.message + "</p>";
+            return;
+        }
+        if (!data || data.length === 0) {
             container.innerHTML = "<p style='color:#666'>当前没有待处理的稿件。</p>";
             return;
         }
 
         container.innerHTML = data.map(item => `
             <div class="article-item">
-                <div class="article-info">
-                    <h4>${item.title}</h4>
-                    <p>作者: ${item.author} | 时间: ${new Date(item.created_at).toLocaleString()}</p>
-                    <a href="${item.file_url}" target="_blank" style="color:#3498db; text-decoration:none;">📂 查看原稿文件</a>
-                </div>
-                <div>
-                    <button class="btn btn-approve" onclick="updateStatus('${item.id}', 'approved')">准予发布</button>
-                    <button class="btn btn-reject" onclick="updateStatus('${item.id}', 'rejected')">驳回</button>
+                <div class="article-item-top">
+                    <div class="article-info">
+                        <h4>${escapeHtml(item.title)}
+                            <span class="status-badge status-${item.status}">${item.status}</span>
+                        </h4>
+                        <p>作者: ${escapeHtml(item.author)} | 时间: ${new Date(item.created_at).toLocaleString()}</p>
+                        ${item.file_url ? `<a href="${escapeHtml(item.file_url)}" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">📂 查看原稿文件</a>` : ''}
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-edit" onclick="openEditor('${item.id}')">编辑发布</button>
+                        <button class="btn btn-reject" onclick="quickReject('${item.id}')">驳回</button>
+                    </div>
                 </div>
             </div>
         `).join('');
     }
 
-    // 快速 Update 状态
-    async function updateStatus(id, newStatus) {
-        const { error } = await sb
-            .from('articles')
-            .update({ status: newStatus })
-            .eq('id', id);
+    // Editor
+    async function openEditor(id) {
+        const { data, error } = await sb.from('articles').select('*').eq('id', id).single();
+        if (error) { alert('加载失败: ' + error.message); return; }
 
-        if (error) alert("更新失败: " + error.message);
-        else fetchPending();
+        currentArticleId = id;
+        document.getElementById('edit-title').value = data.title || '';
+        document.getElementById('edit-author').value = data.author || '';
+        document.getElementById('edit-tags').value = data.tags || '';
+        document.getElementById('edit-tag-color').value = data.tag_color || 'brown';
+        document.getElementById('edit-excerpt').value = data.excerpt || '';
+        document.getElementById('edit-content').value = data.content || '';
+        document.getElementById('editor-title').textContent = '编辑: ' + data.title;
+
+        if (data.file_url) {
+            document.getElementById('edit-file-link').innerHTML =
+                `<a href="${escapeHtml(data.file_url)}" target="_blank" style="color:#3498db;">📂 ${escapeHtml(data.file_url)}</a>`;
+        } else {
+            document.getElementById('edit-file-link').innerHTML = '<span style="color:#999;">无文件链接</span>';
+        }
+
+        document.getElementById('admin-ui').classList.add('hidden');
+        document.getElementById('editor-ui').classList.remove('hidden');
+        switchTab('write');
     }
 
-    async function signOut() {
-        await sb.auth.signOut();
-        location.reload();
+    function closeEditor() {
+        currentArticleId = null;
+        document.getElementById('editor-ui').classList.add('hidden');
+        document.getElementById('admin-ui').classList.remove('hidden');
+        fetchPending();
+    }
+
+    // Tab switching
+    function switchTab(tab) {
+        var tabs = document.querySelectorAll('.tab');
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+
+        if (tab === 'write') {
+            tabs[0].classList.add('active');
+            document.getElementById('edit-content').style.display = 'block';
+            document.getElementById('content-preview').style.display = 'none';
+        } else {
+            tabs[1].classList.add('active');
+            document.getElementById('edit-content').style.display = 'none';
+            document.getElementById('content-preview').style.display = 'block';
+            document.getElementById('content-preview').innerHTML = textToHtml(document.getElementById('edit-content').value);
+        }
+    }
+
+    // Plain text to HTML converter
+    function textToHtml(text) {
+        if (!text) return '<p style="color:#999;">暂无内容</p>';
+        var lines = text.split('\n');
+        var html = '';
+        var i = 0;
+        while (i < lines.length) {
+            var line = lines[i].trim();
+            if (line === '') { i++; continue; }
+            if (line === '---' || line === '———') {
+                html += '<hr>';
+            } else if (line.startsWith('# ')) {
+                html += '<h2>' + escapeHtml(line.substring(2)) + '</h2>';
+            } else if (line.startsWith('> ')) {
+                html += '<blockquote><p>' + formatInline(line.substring(2)) + '</p></blockquote>';
+            } else {
+                html += '<p>' + formatInline(line) + '</p>';
+            }
+            i++;
+        }
+        return html;
+    }
+
+    // Inline formatting: **bold**
+    function formatInline(text) {
+        text = escapeHtml(text);
+        text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        return text;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // Save & publish
+    async function publishArticle() {
+        var content = document.getElementById('edit-content').value;
+        var htmlContent = textToHtml(content);
+
+        const { error } = await sb.from('articles').update({
+            title: document.getElementById('edit-title').value,
+            author: document.getElementById('edit-author').value,
+            tags: document.getElementById('edit-tags').value,
+            tag_color: document.getElementById('edit-tag-color').value,
+            excerpt: document.getElementById('edit-excerpt').value,
+            content: htmlContent,
+            status: 'approved'
+        }).eq('id', currentArticleId);
+
+        if (error) { alert('发布失败: ' + error.message); return; }
+        alert('发布成功！文章已上线。');
+        closeEditor();
+    }
+
+    // Save draft
+    async function saveAsDraft() {
+        var content = document.getElementById('edit-content').value;
+        var htmlContent = textToHtml(content);
+
+        const { error } = await sb.from('articles').update({
+            title: document.getElementById('edit-title').value,
+            author: document.getElementById('edit-author').value,
+            tags: document.getElementById('edit-tags').value,
+            tag_color: document.getElementById('edit-tag-color').value,
+            excerpt: document.getElementById('edit-excerpt').value,
+            content: htmlContent,
+            status: 'pending'
+        }).eq('id', currentArticleId);
+
+        if (error) { alert('保存失败: ' + error.message); return; }
+        alert('已保存为草稿。');
+    }
+
+    // Reject
+    async function rejectArticle() {
+        const { error } = await sb.from('articles').update({ status: 'rejected' }).eq('id', currentArticleId);
+        if (error) { alert('操作失败: ' + error.message); return; }
+        alert('已驳回。');
+        closeEditor();
+    }
+
+    async function quickReject(id) {
+        const { error } = await sb.from('articles').update({ status: 'rejected' }).eq('id', id);
+        if (error) alert('操作失败: ' + error.message);
+        else fetchPending();
     }
 
     checkAuth();

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文章 — Shift 刊见</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Compact Header -->
+  <header class="site-header article-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <a href="index.html" class="back-home">&larr; 返回首页</a>
+        <h1 class="header-title" style="font-size:1.6rem;">Shift <span class="icon-shift">&#8629;</span> 刊见</h1>
+      </div>
+      <div class="header-right">
+        <p class="header-issn">&#9679; SHIFT 3008 · 2026 创刊号</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Article -->
+  <article class="article-page">
+    <div id="article-loading" style="text-align:center; padding:3rem; color:var(--color-text-light);">
+      正在加载文章...
+    </div>
+
+    <div id="article-content" style="display:none;">
+      <div class="article-meta-top">
+        <span id="article-tag" class="tag tag-brown"></span>
+      </div>
+
+      <h1 class="article-title" id="article-title"></h1>
+
+      <div class="article-info">
+        <p class="article-authors" id="article-author"></p>
+      </div>
+
+      <div class="article-body" id="article-body"></div>
+
+      <p style="text-align:center; margin-top:3rem;">—— 完 ——</p>
+    </div>
+
+    <div id="article-error" style="display:none; text-align:center; padding:3rem; color:#c62828;">
+      文章加载失败或不存在。
+    </div>
+  </article>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>Shift 刊见 &copy; 2026 — Sheer Honesty In Form and Thought</p>
+    <p>由女性书写，为未来署名。开源刊见 · 女性主义知识共同体</p>
+  </footer>
+
+  <script>
+    const sb = window.supabase.createClient(
+      'https://zcpgslkimjjnmwatmkje.supabase.co',
+      'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6'
+    );
+
+    async function loadArticle() {
+      var params = new URLSearchParams(window.location.search);
+      var id = params.get('id');
+
+      if (!id) {
+        showError();
+        return;
+      }
+
+      var { data, error } = await sb
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .eq('status', 'approved')
+        .single();
+
+      if (error || !data) {
+        showError();
+        return;
+      }
+
+      document.title = data.title + ' — Shift 刊见';
+      document.getElementById('article-title').textContent = data.title;
+      document.getElementById('article-author').innerHTML = '&#9998; ' + escapeHtml(data.author);
+      document.getElementById('article-body').innerHTML = data.content || '<p>暂无内容</p>';
+
+      if (data.tags) {
+        var tagEl = document.getElementById('article-tag');
+        tagEl.textContent = data.tags;
+        tagEl.className = 'tag tag-' + (data.tag_color || 'brown');
+      }
+
+      document.getElementById('article-loading').style.display = 'none';
+      document.getElementById('article-content').style.display = 'block';
+    }
+
+    function showError() {
+      document.getElementById('article-loading').style.display = 'none';
+      document.getElementById('article-error').style.display = 'block';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    loadArticle();
+  </script>
+
+</body>
+</html>

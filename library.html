@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>文库 — Shift 刊见</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
@@ -43,7 +44,7 @@
     </div>
 
     <div class="cards" id="articleCards">
-      <!-- Cards auto-generated from articles.json -->
+      <!-- Cards auto-generated from articles.json + Supabase -->
     </div>
 
     <p id="noResults" style="display:none; text-align:center; color:var(--color-text-light); margin-top:2rem;">
@@ -58,45 +59,76 @@
   </footer>
 
   <script>
-    // Load articles from JSON and render cards
-    fetch('articles.json')
+    var container = document.getElementById('articleCards');
+
+    function createCard(title, author, tags, tagColor, excerpt, url, searchText) {
+      var card = document.createElement('a');
+      card.href = url;
+      card.className = 'card-link';
+      card.setAttribute('data-search', searchText);
+      card.innerHTML =
+        '<article class="card">' +
+          '<div class="card-tags">' +
+            '<span class="tag tag-' + (tagColor || 'brown') + '">' + (tags || '') + '</span>' +
+          '</div>' +
+          '<h3 class="card-title">' + title + '</h3>' +
+          '<p class="card-author">&#9998; ' + author + '</p>' +
+          '<p class="card-excerpt">' + (excerpt || '') + '</p>' +
+        '</article>';
+      return card;
+    }
+
+    // Load from articles.json (existing static articles)
+    var jsonPromise = fetch('articles.json')
       .then(function(res) { return res.json(); })
       .then(function(articles) {
-        var container = document.getElementById('articleCards');
         articles.forEach(function(a) {
-          var card = document.createElement('a');
-          card.href = a.url;
-          card.className = 'card-link';
-          card.setAttribute('data-search', a.title + ' ' + a.author + ' ' + a.tags + ' ' + a.excerpt + ' ' + a.searchKeywords);
-          card.innerHTML =
-            '<article class="card">' +
-              '<div class="card-tags">' +
-                '<span class="tag tag-' + a.tagColor + '">' + a.tags + '</span>' +
-              '</div>' +
-              '<h3 class="card-title">' + a.title + '</h3>' +
-              '<p class="card-author">&#9998; ' + a.author + '</p>' +
-              '<p class="card-excerpt">' + a.excerpt + '</p>' +
-            '</article>';
-          container.appendChild(card);
+          var searchText = a.title + ' ' + a.author + ' ' + a.tags + ' ' + a.excerpt + ' ' + (a.searchKeywords || '');
+          container.appendChild(createCard(a.title, a.author, a.tags, a.tagColor, a.excerpt, a.url, searchText));
         });
+      })
+      .catch(function() {});
 
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('input', function() {
-          var query = this.value.toLowerCase();
-          var cards = document.querySelectorAll('#articleCards .card-link');
-          var visibleCount = 0;
-          cards.forEach(function(card) {
-            var text = card.getAttribute('data-search').toLowerCase();
-            if (text.includes(query)) {
-              card.style.display = '';
-              visibleCount++;
-            } else {
-              card.style.display = 'none';
-            }
+    // Load approved articles from Supabase
+    var sbClient = window.supabase.createClient(
+      'https://zcpgslkimjjnmwatmkje.supabase.co',
+      'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6'
+    );
+
+    var supaPromise = sbClient
+      .from('articles')
+      .select('*')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .then(function(result) {
+        if (result.data && result.data.length > 0) {
+          result.data.forEach(function(a) {
+            var searchText = (a.title || '') + ' ' + (a.author || '') + ' ' + (a.tags || '') + ' ' + (a.excerpt || '');
+            var url = 'article.html?id=' + a.id;
+            container.appendChild(createCard(a.title || '', a.author || '', a.tags || '', a.tag_color || 'brown', a.excerpt || '', url, searchText));
           });
-          document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+      })
+      .catch(function() {});
+
+    // Setup search after both sources load
+    Promise.all([jsonPromise, supaPromise]).then(function() {
+      document.getElementById('searchInput').addEventListener('input', function() {
+        var query = this.value.toLowerCase();
+        var cards = document.querySelectorAll('#articleCards .card-link');
+        var visibleCount = 0;
+        cards.forEach(function(card) {
+          var text = card.getAttribute('data-search').toLowerCase();
+          if (text.includes(query)) {
+            card.style.display = '';
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
         });
+        document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
       });
+    });
   </script>
 
 </body>
