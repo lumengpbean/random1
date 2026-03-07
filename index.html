@@ -59,54 +59,8 @@
       <a href="library.html" class="browse-all">&#9633; 浏览全刊目录</a>
     </div>
 
-    <div class="cards">
-      <!-- Card 1 -->
-      <a href="articles/non-sanwen/article1.html" class="card-link">
-      <article class="card">
-        <div class="card-tags">
-          <span class="tag tag-red">网络文学 · 性别研究</span>
-        </div>
-        <h3 class="card-title">没有继承权的"宠物"：早期"真假千金"文学中假千金的生存逻辑与主体性消隐</h3>
-        <p class="card-author">&#9998; 在晋江游泳的洋世子, 终点文学城, 潇湘</p>
-        <p class="card-excerpt">
-          假千金的本质是"没有继承权的'宠物'"——她虽被纳入豪门家庭，却被结构性排除在财产继承与血脉延续之外，其价值完全维系于对家庭成员的"情感供给"。
-        </p>
-        <div class="card-meta">
-        </div>
-      </article>
-      </a>
-
-      <!-- Card 2 -->
-      <a href="articles/sanwen/articel2.html" class="card-link">
-      <article class="card">
-        <div class="card-tags">
-          <span class="tag tag-brown">散文</span>
-        </div>
-        <h3 class="card-title">相亲对象说："母虾剪掉一只眼更利于繁殖"</h3>
-        <p class="card-author">&#9998; 苍蝇腿女王</p>
-        <p class="card-excerpt">
-          说这话的是我的相亲对象小周。他正替我剥掉熟虾的壳——鲜红的甲壳经他手变得残破不堪，七零八落，碎得像大块皮屑，簌簌从他手里下落。
-        </p>
-        <div class="card-meta">
-        </div>
-      </article>
-      </a>
-
-      <!-- Card 3 -->
-      <a href="articles/non-sanwen/articel3.html" class="card-link">
-      <article class="card">
-        <div class="card-tags">
-          <span class="tag tag-rose">同人研究 · 互联网文化</span>
-        </div>
-        <h3 class="card-title">同人的战场：一次元社交领地及攻击力提升指南</h3>
-        <p class="card-author">&#9998; 嗷嗷嗷</p>
-        <p class="card-excerpt">
-          同人文本在当代青年生活中扮演着复杂而重要的角色。本文探讨阅读同人文本如何缓解精神压力、提升"攻击力"，以及一次元社交如何促进同人体系发展与异化。
-        </p>
-        <div class="card-meta">
-        </div>
-      </article>
-      </a>
+    <div class="cards" id="homepageCards">
+      <!-- Cards auto-generated from articles.json -->
     </div>
   </section>
 
@@ -115,6 +69,30 @@
     <p>Shift 刊见 &copy; 2025 — She Holds In Fist the Truth.</p>
     <p>由女性书写，为未来署名。开源期刊 · 女性主义知识共同体</p>
   </footer>
+
+  <script>
+    fetch('articles.json')
+      .then(function(res) { return res.json(); })
+      .then(function(articles) {
+        var container = document.getElementById('homepageCards');
+        articles.filter(function(a) { return a.homepage; }).forEach(function(a) {
+          var card = document.createElement('a');
+          card.href = a.url;
+          card.className = 'card-link';
+          card.innerHTML =
+            '<article class="card">' +
+              '<div class="card-tags">' +
+                '<span class="tag tag-' + a.tagColor + '">' + a.tags + '</span>' +
+              '</div>' +
+              '<h3 class="card-title">' + a.title + '</h3>' +
+              '<p class="card-author">&#9998; ' + a.author + '</p>' +
+              '<p class="card-excerpt">' + a.excerpt + '</p>' +
+              '<div class="card-meta"></div>' +
+            '</article>';
+          container.appendChild(card);
+        });
+      });
+  </script>
 
 </body>
 </html>
