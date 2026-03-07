@@ -34,40 +34,38 @@
     <section class="article-body">
       <p><strong>论文推荐结构：</strong>引言 - 文献综述 - 研究方法 - 研究结果 - 讨论 - 总结</p>
 
-      <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--color-border);">
+      <hr class="submit-divider">
 
       <h3>在线投稿表单</h3>
 
-      <form id="submitForm">
+      <form id="submitForm" class="submit-form">
         <h4>（一）作者信息</h4>
-        <div style="margin-bottom: 1rem;">
-          <label style="display:block; font-weight:bold; margin-bottom:0.3rem;">作者署名 *</label>
-          <input type="text" id="author" required style="width:100%; padding:0.6rem; border:1px solid var(--color-border); border-radius:6px; font-family:var(--font-serif);">
+        <div class="form-group">
+          <label class="form-label">作者署名 *</label>
+          <input type="text" id="author" required>
         </div>
 
         <h4>（二）稿件信息</h4>
-        <div style="margin-bottom: 1rem;">
-          <label style="display:block; font-weight:bold; margin-bottom:0.3rem;">论文标题 *</label>
-          <input type="text" id="title" required style="width:100%; padding:0.6rem; border:1px solid var(--color-border); border-radius:6px; font-family:var(--font-serif);">
+        <div class="form-group">
+          <label class="form-label">论文标题 *</label>
+          <input type="text" id="title" required>
         </div>
-        <div style="margin-bottom: 1rem;">
-          <label style="display:block; font-weight:bold; margin-bottom:0.3rem;">摘要（100-200字）</label>
-          <textarea id="abstract" rows="4" style="width:100%; padding:0.6rem; border:1px solid var(--color-border); border-radius:6px; font-family:var(--font-serif);"></textarea>
+        <div class="form-group">
+          <label class="form-label">摘要（100-200字）</label>
+          <textarea id="abstract" rows="4"></textarea>
         </div>
-        <div style="margin-bottom: 1rem;">
-          <label style="display:block; font-weight:bold; margin-bottom:0.3rem;">文件链接（Google Drive / 网盘链接）</label>
-          <input type="text" id="fileUrl" placeholder="粘贴你的文件分享链接" style="width:100%; padding:0.6rem; border:1px solid var(--color-border); border-radius:6px; font-family:var(--font-serif);">
+        <div class="form-group">
+          <label class="form-label">文件链接（Google Drive / 网盘链接）</label>
+          <input type="text" id="fileUrl" placeholder="粘贴你的文件分享链接">
         </div>
 
-        <button type="submit" style="background:var(--color-accent); color:white; border:none; padding:0.8rem 2rem; border-radius:6px; font-size:1rem; cursor:pointer; font-family:var(--font-serif); margin-top:1rem;">
-          提交稿件
-        </button>
+        <button type="submit" class="btn-submit">提交稿件</button>
       </form>
 
-      <p id="submitMsg" style="display:none; margin-top:1rem; padding:1rem; border-radius:6px; background:#e8f5e9; color:#2e7d32; font-weight:bold;">
+      <p id="submitMsg" class="submit-msg-success">
         投稿成功！我们会尽快审核。
       </p>
-      <p id="submitError" style="display:none; margin-top:1rem; padding:1rem; border-radius:6px; background:#fce4ec; color:#c62828; font-weight:bold;">
+      <p id="submitError" class="submit-msg-error">
         提交失败，请稍后重试。
       </p>
     </section>
