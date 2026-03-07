@@ -1,250 +1,111 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHIFT | Submission Portal</title>
-    <style>
-        :root {
-            --bg-color: #f4f1ee;
-            --primary-dark: #2d2a2e;
-            --accent-mauve: #5d4a66;
-            --accent-bronze: #b08d74;
-            --text-main: #333;
-            --border-color: #d1ccc0;
-        }
-
-        body {
-            font-family: 'Times New Roman', serif; /* Classic Journal Feel */
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
-
-        /* --- Navigation --- */
-        header {
-            background: #fff;
-            border-bottom: 2px solid var(--primary-dark);
-            padding: 1rem 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .vol-tag {
-            background: var(--accent-mauve);
-            color: white;
-            padding: 2px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-family: sans-serif;
-        }
-
-        nav a {
-            margin-left: 20px;
-            text-decoration: none;
-            color: var(--primary-dark);
-            font-family: sans-serif;
-            font-weight: 500;
-            text-transform: uppercase;
-            font-size: 14px;
-        }
-
-        /* --- Main Layout --- */
-        .container {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 40px;
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        /* --- Form Styling --- */
-        h1 {
-            font-size: 42px;
-            line-height: 1.1;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: -1px;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            border-bottom: 1px solid var(--border-color);
-            margin-top: 30px;
-            padding-bottom: 5px;
-        }
-
-        .form-group {
-            margin: 15px 0;
-        }
-
-        label {
-            display: block;
-            font-family: sans-serif;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            background: white;
-            font-family: sans-serif;
-            box-sizing: border-box;
-        }
-
-        .submit-btn {
-            background: linear-gradient(to right, var(--accent-bronze), #d4a373);
-            color: white;
-            border: none;
-            padding: 15px;
-            width: 100%;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-            text-transform: uppercase;
-        }
-
-        /* --- Sidebar Widgets --- */
-        .sidebar-box {
-            background: #fff;
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .code-box {
-            background: #e5e7eb;
-            font-family: monospace;
-            font-size: 12px;
-            padding: 15px;
-            border-radius: 4px;
-        }
-
-        .structure-guide {
-            background: var(--accent-bronze);
-            color: white;
-            text-align: center;
-        }
-
-        /* --- Graph (SVG) --- */
-        .radar-chart {
-            display: block;
-            margin: 10px auto;
-        }
-
-        footer {
-            border-top: 1px solid var(--border-color);
-            padding: 20px;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-            background: #fff;
-            font-family: sans-serif;
-        }
-
-        @media (max-width: 900px) {
-            .container { grid-template-columns: 1fr; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>投稿须知 — Shift 刊见</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<header>
-    <div class="logo">Shift <span style="background:#4a3e4e; color:white; padding:0 5px;">&#x21b5;</span> 刊见 <span class="vol-tag">SHIFT [Vol 3]</span></div>
-    <nav>
-        <a href="#">Call for Voices</a>
-        <a href="#" style="border-bottom: 2px solid var(--accent-mauve);">Submit</a>
-        <a href="#">Archive</a>
-    </nav>
-</header>
+  <!-- Compact Header -->
+  <header class="site-header article-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <a href="index.html" class="back-home">&larr; 返回首页</a>
+        <h1 class="header-title" style="font-size:1.6rem;">Shift <span class="icon-shift">&#8629;</span> 刊见</h1>
+      </div>
+      <div class="header-right">
+        <p class="header-issn">&#9679; SHIFT 3008 · 2026 创刊号</p>
+      </div>
+    </div>
+  </header>
 
-<div class="container">
-    <main>
-        <h1 style="color: var(--primary-dark);">OUR SPACE, YOUR WORDS.<br>SUBMISSION PORTAL.</h1>
-        <p style="font-family: sans-serif; font-weight: bold;">GUIDELINES & SUBMISSION FORM</p>
+  <!-- Submission Info -->
+  <article class="article-page">
+    <h1 class="article-title">SHIFT开放征稿啦！</h1>
+    <h2>SHIFT刊见投稿须知（欢迎来稿）</h2>
 
-        <form>
-            <div class="section-title">(一) Author Information</div>
-            <div class="form-group">
-                <label>Full Name (CN/EN) (Required)</label>
-                <input type="text" placeholder="Your Name">
-            </div>
-            <div class="form-group" style="display: flex; gap: 10px;">
-                <div style="flex:1;">
-                    <label>Affiliation</label>
-                    <input type="text" placeholder="Organization/Field">
-                </div>
-                <div style="flex:1;">
-                    <label>Contact Email</label>
-                    <input type="email" placeholder="email@example.com">
-                </div>
-            </div>
+    <section class="article-body">
+      <p><strong>论文推荐结构：</strong>引言 - 文献综述 - 研究方法 - 研究结果 - 讨论 - 总结</p>
 
-            <div class="section-title">(二) Manuscript Details</div>
-            <div class="form-group">
-                <label>Paper Title (CN/EN)</label>
-                <input type="text">
-            </div>
-            <div class="form-group">
-                <label>Abstract (100-200 Words)</label>
-                <textarea rows="4"></textarea>
-            </div>
+      <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--color-border);">
 
-            <div class="section-title">(三) File Upload</div>
-            <p style="font-size: 13px; color: #666;">Please upload your paper in [doc/docx] format.</p>
-            <button type="button" class="submit-btn">Choose File & Submit Manuscript</button>
-        </form>
-    </main>
+      <h3>在线投稿表单</h3>
 
-    <aside>
-        <div class="sidebar-box code-box">
-            &lt;HTML&gt;<br>
-            &lt;!-- Submission Matrix Analysis --&gt;
-            <svg class="radar-chart" width="200" height="200" viewBox="0 0 200 200">
-                <polygon points="100,10 190,78 156,180 44,180 10,78" fill="none" stroke="#ccc" stroke-width="1"/>
-                <polygon points="100,40 160,85 140,150 60,150 40,85" fill="none" stroke="#ccc" stroke-width="1"/>
-                <polygon points="100,30 170,80 130,160 70,140 50,70" fill="rgba(93, 74, 102, 0.4)" stroke="var(--accent-mauve)" stroke-width="2"/>
-                <text x="75" y="100" font-size="10" fill="#333">Insight Matrix</text>
-            </svg>
-            &lt;!-- Status 200 OK --&gt;
+      <form id="submitForm">
+        <h4>（一）作者信息</h4>
+        <div style="margin-bottom: 1rem;">
+          <label style="display:block; font-weight:bold; margin-bottom:0.3rem;">作者署名 *</label>
+          <input type="text" id="author" required style="width:100%; padding:0.6rem; border:1px solid var(--color-border); border-radius:6px; font-family:var(--font-serif);">
         </div>
 
-        <div class="sidebar-box structure-guide">
-            <h4 style="margin:0;">RECOMMENDED STRUCTURE</h4>
-            <p style="font-size: 14px; margin: 10px 0;">
-                引言 - 文献综述 - 研究方法 - 研究结果 - 讨论 - 总结<br>
-                <small>Intro - Lit Review - Methods - Results - Discussion - Conclusion</small>
-            </p>
+        <h4>（二）稿件信息</h4>
+        <div style="margin-bottom: 1rem;">
+          <label style="display:block; font-weight:bold; margin-bottom:0.3rem;">论文标题 *</label>
+          <input type="text" id="title" required style="width:100%; padding:0.6rem; border:1px solid var(--color-border); border-radius:6px; font-family:var(--font-serif);">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display:block; font-weight:bold; margin-bottom:0.3rem;">摘要（100-200字）</label>
+          <textarea id="abstract" rows="4" style="width:100%; padding:0.6rem; border:1px solid var(--color-border); border-radius:6px; font-family:var(--font-serif);"></textarea>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display:block; font-weight:bold; margin-bottom:0.3rem;">文件链接（Google Drive / 网盘链接）</label>
+          <input type="text" id="fileUrl" placeholder="粘贴你的文件分享链接" style="width:100%; padding:0.6rem; border:1px solid var(--color-border); border-radius:6px; font-family:var(--font-serif);">
         </div>
 
-        <div class="sidebar-box" style="text-align: center; border-left: 5px solid var(--accent-bronze);">
-            <p style="font-weight: bold; font-style: italic;">"WE ARE NOT JUST DOCUMENTING HISTORY; WE ARE REWRITING IT."</p>
-            <small>- The Shift Collective</small>
-        </div>
-    </aside>
-</div>
+        <button type="submit" style="background:var(--color-accent); color:white; border:none; padding:0.8rem 2rem; border-radius:6px; font-size:1rem; cursor:pointer; font-family:var(--font-serif); margin-top:1rem;">
+          提交稿件
+        </button>
+      </form>
 
-<footer>
-    <div>Journal Info • 2026.03.07 | SHIFT</div>
-    <div>Community Tagline - The Feminist UI Community</div>
-</footer>
+      <p id="submitMsg" style="display:none; margin-top:1rem; padding:1rem; border-radius:6px; background:#e8f5e9; color:#2e7d32; font-weight:bold;">
+        投稿成功！我们会尽快审核。
+      </p>
+      <p id="submitError" style="display:none; margin-top:1rem; padding:1rem; border-radius:6px; background:#fce4ec; color:#c62828; font-weight:bold;">
+        提交失败，请稍后重试。
+      </p>
+    </section>
+  </article>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <p>Shift 刊见 &copy; 2026 — Sheer Honesty In Form and Thought</p>
+    <p>由女性书写，为未来署名。开源刊见 · 女性主义知识共同体</p>
+  </footer>
+
+  <script>
+    const sb = window.supabase.createClient(
+      'https://zcpgslkimjjnmwatmkje.supabase.co',
+      'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6'
+    );
+
+    document.getElementById('submitForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      document.getElementById('submitMsg').style.display = 'none';
+      document.getElementById('submitError').style.display = 'none';
+
+      const { error } = await sb.from('articles').insert({
+        title: document.getElementById('title').value,
+        author: document.getElementById('author').value,
+        file_url: document.getElementById('fileUrl').value || null,
+        status: 'pending'
+      });
+
+      if (error) {
+        document.getElementById('submitError').style.display = 'block';
+        document.getElementById('submitError').textContent = '提交失败: ' + error.message;
+      } else {
+        document.getElementById('submitMsg').style.display = 'block';
+        document.getElementById('submitForm').reset();
+      }
+    });
+  </script>
 
 </body>
 </html>
