@@ -1,7 +1,6 @@
 'use client'
 
 import { Suspense, useState } from 'react'
-import { createClient } from '@/lib/supabase-client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import s from '@/styles/Admin.module.css'
 
@@ -9,19 +8,46 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
   async function handleLogin() {
     setError('')
-    const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-    if (authError) {
-      setError('登录失败: ' + authError.message)
-      return
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || '登录失败')
+        return
+      }
+
+      // If there's an explicit redirect (e.g. from middleware), use it
+      const redirect = searchParams.get('redirect')
+      if (redirect) {
+        router.push(redirect)
+        return
+      }
+
+      // Otherwise, route based on role
+      if (data.role === 'admin') {
+        router.push('/admin')
+      } else if (data.role === 'reviewer') {
+        router.push('/review')
+      } else {
+        setError('该账号没有访问权限。')
+      }
+    } finally {
+      setLoading(false)
     }
-    const redirect = searchParams.get('redirect') || '/review'
-    router.push(redirect)
   }
 
   return (
@@ -37,7 +63,7 @@ function LoginForm() {
         placeholder="邮箱"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+        onKeyDown={(e) => e.key === 'Enter' && !loading && handleLogin()}
       />
       <input
         className={s.input}
@@ -45,14 +71,15 @@ function LoginForm() {
         placeholder="密码"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+        onKeyDown={(e) => e.key === 'Enter' && !loading && handleLogin()}
       />
       <button
         className={`${s.btn} ${s.btnPrimary}`}
         style={{ width: '100%' }}
         onClick={handleLogin}
+        disabled={loading}
       >
-        登录
+        {loading ? '登录中...' : '登录'}
       </button>
     </div>
   )
