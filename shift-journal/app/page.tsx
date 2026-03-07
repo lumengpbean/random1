@@ -7,17 +7,21 @@ import Footer from '@/components/Footer'
 import s from '@/styles/ArticleCard.module.css'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const supabase = createStaticClient()
 
-  const { data: articles } = await supabase
-    .from('articles')
-    .select('*')
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false })
-    .limit(6)
-
-  const displayArticles = (articles as Article[]) || []
+  let displayArticles: Article[] = []
+  if (supabase) {
+    const { data } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(6)
+    displayArticles = (data as Article[]) || []
+  }
 
   return (
     <>
