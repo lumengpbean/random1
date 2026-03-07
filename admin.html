@@ -239,14 +239,27 @@ Wang, L. (2021). 论文标题.</pre>
             return;
         }
 
-        container.innerHTML = data.map(item => `
+        // Fetch vote counts
+        const articleIds = data.map(function(a) { return a.id; });
+        const { data: allReviews } = await sb.from('reviews').select('*').in('article_id', articleIds);
+        var reviews = allReviews || [];
+
+        container.innerHTML = data.map(function(item) {
+            var articleReviews = reviews.filter(function(r) { return r.article_id === item.id; });
+            var approveCount = articleReviews.filter(function(r) { return r.vote === 'approve'; }).length;
+            var rejectCount = articleReviews.filter(function(r) { return r.vote === 'reject'; }).length;
+            var voteHtml = articleReviews.length > 0
+                ? ' <span style="font-size:0.8rem; color:#666;">| 投票: <span style="color:#27ae60;">' + approveCount + ' 赞成</span> / <span style="color:#e74c3c;">' + rejectCount + ' 反对</span></span>'
+                : '';
+
+            return `
             <div class="article-item">
                 <div class="article-item-top">
                     <div class="article-info">
                         <h4>${escapeHtml(item.title)}
                             <span class="status-badge status-${item.status}">${item.status}</span>
                         </h4>
-                        <p>作者: ${escapeHtml(item.author)} | ${item.type === 'paper' ? '📄 论文' : '📝 非论文'} | 时间: ${new Date(item.created_at).toLocaleString()}</p>
+                        <p>作者: ${escapeHtml(item.author)} | ${item.type === 'paper' ? '📄 论文' : '📝 非论文'} | 时间: ${new Date(item.created_at).toLocaleString()}${voteHtml}</p>
                         ${item.file_url ? `<a href="${escapeHtml(item.file_url)}" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">📂 查看原稿文件</a>` : ''}
                     </div>
                     <div class="btn-group">
@@ -255,8 +268,8 @@ Wang, L. (2021). 论文标题.</pre>
                         <button class="btn" style="background:#95a5a6;" onclick="deleteArticle('${item.id}')">删除</button>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
 
     // Editor

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审稿投票 - Shift 刊见</title>
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --accent: #a14b92; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .card { background: white; max-width: 960px; margin: 20px auto; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        .article-item { border-bottom: 1px solid #eee; padding: 20px 0; }
+        .article-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+        .article-info { flex: 1; }
+        .article-info h4 { margin: 0 0 8px 0; color: var(--primary); }
+        .article-info p { margin: 4px 0; font-size: 0.9rem; color: #666; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s; color: white; font-size: 0.9rem; }
+        .btn-approve { background: var(--success); }
+        .btn-reject { background: var(--danger); }
+        .btn-group { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+        .login-box { text-align: center; padding: 40px 0; }
+        input { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; }
+        textarea { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; resize: vertical; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #e8f5e9; color: #2e7d32; }
+        .vote-info { margin-top: 8px; font-size: 0.85rem; }
+        .vote-bar { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+        .vote-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .vote-dot.approve { background: var(--success); }
+        .vote-dot.reject { background: var(--danger); }
+        .vote-dot.empty { background: #ddd; }
+        .voted-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; background: #e3f2fd; color: #1565c0; }
+        .comment-input { margin-top: 8px; }
+        .comment-input textarea { font-size: 0.85rem; padding: 8px; }
+        .review-detail { margin-top: 12px; padding: 12px; background: #f9f9f9; border-radius: 6px; font-size: 0.85rem; }
+        .review-detail p { margin: 4px 0; color: #666; }
+        .threshold-info { background: #f0f0f0; padding: 10px 16px; border-radius: 6px; font-size: 0.85rem; color: #666; margin-bottom: 16px; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="card">
+    <!-- Login -->
+    <div id="auth-ui">
+        <div class="login-box">
+            <h2>审稿员登录</h2>
+            <p style="color:#666; font-size:0.9rem;">登录后可对待审稿件进行投票</p>
+            <input type="email" id="email" placeholder="审稿员邮箱">
+            <input type="password" id="password" placeholder="密码">
+            <button class="btn" style="background:var(--primary); width:100%" onclick="signIn()">登录</button>
+        </div>
+    </div>
+
+    <!-- Review List -->
+    <div id="review-ui" class="hidden">
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h2>待审稿件</h2>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span id="user-email" style="font-size:0.85rem; color:#666;"></span>
+                <button onclick="signOut()" style="background:none; border:none; color:#666; cursor:pointer;">退出登录</button>
+            </div>
+        </div>
+        <div class="threshold-info">
+            投票规则：需要 <strong id="threshold-display"></strong> 票赞成即可发布。每人仅可投票一次。
+        </div>
+        <div id="article-list">正在加载稿件...</div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://zcpgslkimjjnmwatmkje.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ---- CONFIG ----
+    const REQUIRED_APPROVALS = 4; // Number of approve votes needed to auto-publish
+
+    let currentUser = null;
+
+    document.getElementById('threshold-display').textContent = REQUIRED_APPROVALS;
+
+    // Auth
+    async function checkAuth() {
+        const { data: { user } } = await sb.auth.getUser();
+        if (user) {
+            currentUser = user;
+            document.getElementById('auth-ui').classList.add('hidden');
+            document.getElementById('review-ui').classList.remove('hidden');
+            document.getElementById('user-email').textContent = user.email;
+            loadArticles();
+        }
+    }
+
+    async function signIn() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) alert('登录失败: ' + error.message);
+        else location.reload();
+    }
+
+    async function signOut() {
+        await sb.auth.signOut();
+        location.reload();
+    }
+
+    // Load pending articles + their votes
+    async function loadArticles() {
+        const { data: articles, error } = await sb.from('articles')
+            .select('*')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false });
+
+        const container = document.getElementById('article-list');
+
+        if (error) {
+            container.innerHTML = "<p style='color:red'>加载失败: " + error.message + "</p>";
+            return;
+        }
+        if (!articles || articles.length === 0) {
+            container.innerHTML = "<p style='color:#666'>当前没有待审稿件。</p>";
+            return;
+        }
+
+        // Fetch all reviews for these articles
+        const articleIds = articles.map(function(a) { return a.id; });
+        const { data: allReviews } = await sb.from('reviews')
+            .select('*')
+            .in('article_id', articleIds);
+
+        var reviews = allReviews || [];
+
+        container.innerHTML = articles.map(function(item) {
+            var articleReviews = reviews.filter(function(r) { return r.article_id === item.id; });
+            var approveCount = articleReviews.filter(function(r) { return r.vote === 'approve'; }).length;
+            var rejectCount = articleReviews.filter(function(r) { return r.vote === 'reject'; }).length;
+            var myVote = articleReviews.find(function(r) { return r.reviewer_id === currentUser.id; });
+
+            // Vote dots
+            var dots = '';
+            for (var i = 0; i < approveCount; i++) dots += '<span class="vote-dot approve" title="赞成"></span>';
+            for (var j = 0; j < rejectCount; j++) dots += '<span class="vote-dot reject" title="反对"></span>';
+            var remaining = REQUIRED_APPROVALS - approveCount;
+            if (remaining > 0) {
+                for (var k = 0; k < remaining; k++) dots += '<span class="vote-dot empty" title="待投票"></span>';
+            }
+
+            // Review comments
+            var commentsHtml = '';
+            if (articleReviews.length > 0) {
+                commentsHtml = '<div class="review-detail"><strong>审稿意见：</strong>';
+                articleReviews.forEach(function(r) {
+                    var voteLabel = r.vote === 'approve' ? '赞成' : '反对';
+                    var voteColor = r.vote === 'approve' ? 'var(--success)' : 'var(--danger)';
+                    commentsHtml += '<p><span style="color:' + voteColor + '; font-weight:600;">[' + voteLabel + ']</span> ' +
+                        (r.comment ? escapeHtml(r.comment) : '<em style="color:#aaa;">无评语</em>') + '</p>';
+                });
+                commentsHtml += '</div>';
+            }
+
+            // Vote buttons or voted badge
+            var actionHtml = '';
+            if (myVote) {
+                var myVoteLabel = myVote.vote === 'approve' ? '已投：赞成' : '已投：反对';
+                actionHtml = '<span class="voted-badge">' + myVoteLabel + '</span>';
+            } else {
+                actionHtml =
+                    '<div>' +
+                        '<div class="comment-input">' +
+                            '<textarea id="comment-' + item.id + '" rows="2" placeholder="审稿意见（选填）"></textarea>' +
+                        '</div>' +
+                        '<div class="btn-group" style="margin-top:6px;">' +
+                            '<button class="btn btn-approve" onclick="castVote(\'' + item.id + '\', \'approve\')">赞成发布</button>' +
+                            '<button class="btn btn-reject" onclick="castVote(\'' + item.id + '\', \'reject\')">反对发布</button>' +
+                        '</div>' +
+                    '</div>';
+            }
+
+            return '<div class="article-item">' +
+                '<div class="article-item-top">' +
+                    '<div class="article-info">' +
+                        '<h4>' + escapeHtml(item.title) +
+                            ' <span class="status-badge status-pending">待审核</span>' +
+                        '</h4>' +
+                        '<p>作者: ' + escapeHtml(item.author) + ' | ' +
+                            (item.type === 'paper' ? '论文' : '非论文') + ' | ' +
+                            new Date(item.created_at).toLocaleDateString() + '</p>' +
+                        (item.excerpt ? '<p style="margin-top:6px; color:#444;">' + escapeHtml(item.excerpt) + '</p>' : '') +
+                        (item.file_url ? '<a href="' + escapeHtml(item.file_url) + '" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">查看原稿文件</a>' : '') +
+                        '<div class="vote-info">' +
+                            '<div class="vote-bar">' + dots + '</div>' +
+                            '<span style="color:var(--success);">赞成 ' + approveCount + '</span> / ' +
+                            '<span style="color:var(--danger);">反对 ' + rejectCount + '</span>' +
+                            ' (需 ' + REQUIRED_APPROVALS + ' 票赞成)' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="flex-shrink:0;">' + actionHtml + '</div>' +
+                '</div>' +
+                commentsHtml +
+            '</div>';
+        }).join('');
+    }
+
+    // Cast a vote
+    async function castVote(articleId, vote) {
+        var comment = document.getElementById('comment-' + articleId).value || null;
+
+        const { error } = await sb.from('reviews').insert({
+            article_id: articleId,
+            reviewer_id: currentUser.id,
+            vote: vote,
+            comment: comment
+        });
+
+        if (error) {
+            if (error.message.includes('unique') || error.message.includes('duplicate')) {
+                alert('你已经对这篇稿件投过票了。');
+            } else {
+                alert('投票失败: ' + error.message);
+            }
+            return;
+        }
+
+        // Check if threshold reached → auto-publish
+        if (vote === 'approve') {
+            const { data: reviews } = await sb.from('reviews')
+                .select('*')
+                .eq('article_id', articleId)
+                .eq('vote', 'approve');
+
+            if (reviews && reviews.length >= REQUIRED_APPROVALS) {
+                await sb.from('articles').update({ status: 'approved' }).eq('id', articleId);
+                alert('投票成功！该稿件已达到 ' + REQUIRED_APPROVALS + ' 票赞成，自动发布。');
+            } else {
+                var remaining = REQUIRED_APPROVALS - (reviews ? reviews.length : 0);
+                alert('投票成功！还需 ' + remaining + ' 票赞成即可发布。');
+            }
+        } else {
+            alert('投票成功（反对）。');
+        }
+
+        loadArticles();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    checkAuth();
+</script>
+</body>
+</html>
