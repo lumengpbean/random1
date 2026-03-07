@@ -114,6 +114,7 @@
             <button class="btn btn-approve" onclick="publishArticle()">保存并发布</button>
             <button class="btn" style="background:#3498db;" onclick="saveAsDraft()">仅保存（不发布）</button>
             <button class="btn btn-reject" onclick="rejectArticle()">驳回</button>
+            <button class="btn" style="background:#95a5a6;" onclick="deleteArticle(currentArticleId)">永久删除</button>
         </div>
     </div>
 </div>
@@ -179,6 +180,7 @@
                     <div class="btn-group">
                         <button class="btn btn-edit" onclick="openEditor('${item.id}')">编辑发布</button>
                         <button class="btn btn-reject" onclick="quickReject('${item.id}')">驳回</button>
+                        <button class="btn" style="background:#95a5a6;" onclick="deleteArticle('${item.id}')">删除</button>
                     </div>
                 </div>
             </div>
@@ -323,6 +325,16 @@
         const { error } = await sb.from('articles').update({ status: 'rejected' }).eq('id', id);
         if (error) alert('操作失败: ' + error.message);
         else fetchPending();
+    }
+
+    async function deleteArticle(id) {
+        if (!confirm('确定要永久删除这篇稿件吗？此操作不可撤销。')) return;
+        const { error } = await sb.from('articles').delete().eq('id', id);
+        if (error) alert('删除失败: ' + error.message);
+        else {
+            if (currentArticleId === id) closeEditor();
+            else fetchPending();
+        }
     }
 
     checkAuth();
