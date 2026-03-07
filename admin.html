@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>期刊审核后台 - 内部版</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .card { background: white; max-width: 900px; margin: 20px auto; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .hidden { display: none; }
+        .article-item { border-bottom: 1px solid #eee; padding: 20px 0; display: flex; justify-content: space-between; align-items: center; }
+        .article-info h4 { margin: 0 0 8px 0; color: var(--primary); }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s; color: white; }
+        .btn-approve { background: var(--success); margin-right: 10px; }
+        .btn-reject { background: var(--danger); }
+        .login-box { text-align: center; padding: 40px 0; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="auth-ui">
+        <div class="login-box">
+            <h2>审核员登录</h2>
+            <input type="email" id="email" placeholder="审核员邮箱">
+            <input type="password" id="password" placeholder="密码">
+            <button class="btn" style="background:var(--primary); width:100%" onclick="signIn()">进入系统</button>
+        </div>
+    </div>
+
+    <div id="admin-ui" class="hidden">
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h2>待审核稿件池</h2>
+            <button onclick="signOut()" style="background:none; border:none; color:#666; cursor:pointer;">退出登录</button>
+        </div>
+        <div id="article-list">正在同步云端数据...</div>
+    </div>
+</div>
+
+<script>
+    // 配置你的项目信息
+    const SUPABASE_URL = 'https://zcpgslkimjjnmwatmkje.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 检查登录态
+    async function checkAuth() {
+        const { data: { user } } = await sb.auth.getUser();
+        if (user) {
+            document.getElementById('auth-ui').classList.add('hidden');
+            document.getElementById('admin-ui').classList.remove('hidden');
+            fetchPending();
+        }
+    }
+
+    // 登录逻辑
+    async function signIn() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) alert("权限验证失败: " + error.message);
+        else location.reload();
+    }
+
+    // 获取待处理文章
+    async function fetchPending() {
+        const { data, error } = await sb
+            .from('articles')
+            .select('*')
+            .neq('status', 'approved') // 抓取 pending 和 rejected
+            .order('created_at', { ascending: false });
+
+        const container = document.getElementById('article-list');
+        if (data.length === 0) {
+            container.innerHTML = "<p style='color:#666'>当前没有待处理的稿件。</p>";
+            return;
+        }
+
+        container.innerHTML = data.map(item => `
+            <div class="article-item">
+                <div class="article-info">
+                    <h4>${item.title}</h4>
+                    <p>作者: ${item.author} | 时间: ${new Date(item.created_at).toLocaleString()}</p>
+                    <a href="${item.file_url}" target="_blank" style="color:#3498db; text-decoration:none;">📂 查看原稿文件</a>
+                </div>
+                <div>
+                    <button class="btn btn-approve" onclick="updateStatus('${item.id}', 'approved')">准予发布</button>
+                    <button class="btn btn-reject" onclick="updateStatus('${item.id}', 'rejected')">驳回</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 快速 Update 状态
+    async function updateStatus(id, newStatus) {
+        const { error } = await sb
+            .from('articles')
+            .update({ status: newStatus })
+            .eq('id', id);
+
+        if (error) alert("更新失败: " + error.message);
+        else fetchPending();
+    }
+
+    async function signOut() {
+        await sb.auth.signOut();
+        location.reload();
+    }
+
+    checkAuth();
+</script>
+</body>
+</html>
