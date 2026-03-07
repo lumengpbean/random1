@@ -1,0 +1,156 @@
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.8rem;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  background: none;
+}
+
+.tab:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.tab:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.tabActive {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+.tab:not(.tabActive):hover {
+  background: var(--color-accent-light);
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formLabel {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 1rem;
+  color: var(--color-text);
+  background: var(--color-bg-card);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--color-accent);
+}
+
+.btnSubmit {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s;
+}
+
+.btnSubmit:hover {
+  background: #8a3f7d;
+}
+
+.uploadArea {
+  border: 2px dashed var(--color-border);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0.5rem 0;
+}
+
+.uploadArea:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
+.uploadAreaHasFile {
+  border-color: var(--color-accent);
+  background: #e8f5e9;
+}
+
+.fileName {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.uploadHint {
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+  margin-top: 0.3rem;
+}
+
+.progressBar {
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.3s;
+}
+
+.progressText {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  margin-top: 4px;
+}
+
+.msgSuccess {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 6px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+.msgError {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 6px;
+  background: #fce4ec;
+  color: #c62828;
+  font-weight: bold;
+}
+
+.divider {
+  margin: 2rem 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}

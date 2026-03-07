@@ -1,0 +1,243 @@
+.container {
+  background: white;
+  max-width: 960px;
+  margin: 20px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.page {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.loginBox {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1rem;
+  line-height: 1.8;
+  resize: vertical;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  margin-top: 12px;
+  margin-bottom: 2px;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.btnApprove { background: var(--color-success); }
+.btnReject { background: var(--color-danger); }
+.btnEdit { background: var(--color-accent); }
+.btnBack { background: #95a5a6; }
+.btnPrimary { background: var(--color-primary); }
+.btnSave { background: #3498db; }
+.btnDelete { background: #95a5a6; }
+
+.btnGroup {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.articleItem {
+  border-bottom: 1px solid #eee;
+  padding: 20px 0;
+}
+
+.articleItemTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.articleInfo h4 {
+  margin: 0 0 8px 0;
+  color: var(--color-primary);
+}
+
+.articleInfo p {
+  margin: 4px 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.statusPending { background: #fff3cd; color: #856404; }
+.statusReviewed { background: #e3f2fd; color: #1565c0; }
+.statusRejected { background: #fce4ec; color: #c62828; }
+.statusApproved { background: #e8f5e9; color: #2e7d32; }
+
+.signOutBtn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+}
+
+.tabBar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+}
+
+.tab {
+  padding: 8px 20px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background: #f5f5f5;
+}
+
+.tab:first-child { border-radius: 6px 0 0 6px; }
+.tab:last-child { border-radius: 0 6px 6px 0; }
+
+.tabActive {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+.editorPreview {
+  background: #faf8f5;
+  border: 1px solid #e5ddd4;
+  border-radius: 8px;
+  padding: 2rem;
+  margin-top: 12px;
+  font-family: 'Noto Serif SC', serif;
+  line-height: 2;
+}
+
+.editorPreview p { margin-bottom: 1rem; }
+.editorPreview h2 { font-size: 1.3rem; color: #a14b92; margin: 2rem 0 0.8rem; }
+.editorPreview blockquote { border-left: 3px solid #a14b92; padding-left: 1rem; color: #666; margin: 1rem 0; }
+.editorPreview hr { border: none; border-top: 1px solid #e5ddd4; margin: 2rem 0; }
+
+.gridRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.editorActions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.formatHint {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 4px;
+}
+
+.thresholdInfo {
+  background: #f0f0f0;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.voteInfo {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.voteBar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.voteDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.voteDotApprove { background: var(--color-success); }
+.voteDotReject { background: var(--color-danger); }
+.voteDotEmpty { background: #ddd; }
+
+.votedBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.reviewDetail {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.reviewDetail p {
+  margin: 4px 0;
+  color: #666;
+}
+
+.fileLink {
+  color: #3498db;
+  text-decoration: none;
+  font-size: 0.9rem;
+}

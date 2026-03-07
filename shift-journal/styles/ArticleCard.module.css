@@ -1,0 +1,149 @@
+.section {
+  max-width: 1100px;
+  margin: 2rem auto 3rem;
+  padding: 0 3rem;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.browseAll {
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  border: 1px solid var(--color-border);
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.browseAll:hover {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.cardLink:hover {
+  color: inherit;
+}
+
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-purple-light);
+  border-radius: 10px;
+  padding: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border-top: 3px solid var(--color-purple-deep);
+  height: 100%;
+}
+
+.card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.tags {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tag {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-weight: 600;
+  color: var(--color-purple-deep);
+  background: #fae8fa;
+}
+
+.cardTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.cardAuthor {
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+}
+
+.cardExcerpt {
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  line-height: 1.8;
+  flex-grow: 1;
+}
+
+.cardMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  border-top: 1px solid var(--color-purple-deep);
+  padding-top: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+.searchBar {
+  margin-bottom: 2rem;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: var(--color-accent);
+}
+
+.noResults {
+  text-align: center;
+  color: var(--color-text-light);
+  margin-top: 2rem;
+}
+
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+  .section {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+}
