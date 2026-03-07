@@ -371,17 +371,22 @@ Wang, L. (2021). 论文标题.</pre>
         var content = document.getElementById('edit-content').value;
         var htmlContent = textToHtml(content);
 
-        const { error } = await sb.from('articles').update({
+        // First save edits (without changing status to approved)
+        const { error: saveError } = await sb.from('articles').update({
             title: document.getElementById('edit-title').value,
             author: document.getElementById('edit-author').value,
             tags: document.getElementById('edit-tags').value,
             tag_color: document.getElementById('edit-tag-color').value,
             excerpt: document.getElementById('edit-excerpt').value,
             content: htmlContent,
-            status: 'approved'
         }).eq('id', currentArticleId);
 
-        if (error) { alert('发布失败: ' + error.message); return; }
+        if (saveError) { alert('保存失败: ' + saveError.message); return; }
+
+        // Then publish via server-side function that checks vote count
+        const { error: publishError } = await sb.rpc('publish_article', { article_id: currentArticleId });
+
+        if (publishError) { alert('发布失败: ' + publishError.message); return; }
         alert('发布成功！文章已上线。');
         closeEditor();
     }
