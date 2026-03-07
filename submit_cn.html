@@ -10,6 +10,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    .submit-tabs { display: flex; gap: 0; margin-bottom: 1.5rem; }
+    .submit-tab {
+      flex: 1; text-align: center; padding: 0.8rem; cursor: pointer;
+      border: 1px solid var(--color-border); font-family: var(--font-serif);
+      font-size: 1rem; font-weight: 600; transition: all 0.2s;
+    }
+    .submit-tab:first-child { border-radius: 8px 0 0 8px; }
+    .submit-tab:last-child { border-radius: 0 8px 8px 0; }
+    .submit-tab.active { background: var(--color-accent); color: white; border-color: var(--color-accent); }
+    .submit-tab:not(.active):hover { background: var(--color-accent-light); }
+    .upload-area {
+      border: 2px dashed var(--color-border); border-radius: 8px; padding: 2rem;
+      text-align: center; cursor: pointer; transition: all 0.2s; margin: 0.5rem 0;
+    }
+    .upload-area:hover { border-color: var(--color-accent); background: var(--color-accent-light); }
+    .upload-area.has-file { border-color: var(--color-accent); background: #e8f5e9; }
+    .file-name { margin-top: 0.5rem; font-size: 0.9rem; color: var(--color-accent); font-weight: 600; }
+    .upload-hint { font-size: 0.85rem; color: var(--color-text-light); margin-top: 0.3rem; }
+    .upload-progress { display: none; margin-top: 0.5rem; }
+    .progress-bar { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--color-accent); width: 0%; transition: width 0.3s; }
+  </style>
 </head>
 <body>
 
@@ -36,27 +59,70 @@
 
       <hr class="submit-divider">
 
-      <h3>在线投稿表单</h3>
+      <!-- Tab Selector -->
+      <div class="submit-tabs">
+        <div class="submit-tab active" onclick="switchForm('paper')">论文投稿（PDF）</div>
+        <div class="submit-tab" onclick="switchForm('essay')">非论文投稿（散文/随笔等）</div>
+      </div>
 
-      <form id="submitForm" class="submit-form">
+      <!-- Paper Form -->
+      <form id="paperForm" class="submit-form">
         <h4>（一）作者信息</h4>
         <div class="form-group">
           <label class="form-label">作者署名 *</label>
-          <input type="text" id="author" required>
+          <input type="text" id="paper-author" required>
+        </div>
+
+        <h4>（二）论文信息</h4>
+        <div class="form-group">
+          <label class="form-label">论文标题 *</label>
+          <input type="text" id="paper-title" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">摘要（100-200字）*</label>
+          <textarea id="paper-abstract" rows="4" required></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">关键词（3-8个，用逗号分隔）</label>
+          <input type="text" id="paper-keywords" placeholder="女性主义, 知识生产, 学术写作">
+        </div>
+
+        <h4>（三）上传论文 PDF *</h4>
+        <div class="upload-area" id="upload-area" onclick="document.getElementById('paper-file').click();">
+          <p style="font-size:1.5rem; margin-bottom:0.5rem;">📄</p>
+          <p>点击上传 PDF 文件</p>
+          <p class="upload-hint">仅支持 PDF 格式，最大 50MB</p>
+          <p class="file-name" id="file-name"></p>
+        </div>
+        <input type="file" id="paper-file" accept=".pdf" style="display:none;" onchange="handleFileSelect(this)">
+        <div class="upload-progress" id="upload-progress">
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          <p style="font-size:0.8rem; color:var(--color-text-light); margin-top:4px;" id="progress-text">上传中...</p>
+        </div>
+
+        <button type="submit" class="btn-submit">提交论文</button>
+      </form>
+
+      <!-- Essay Form -->
+      <form id="essayForm" class="submit-form" style="display:none;">
+        <h4>（一）作者信息</h4>
+        <div class="form-group">
+          <label class="form-label">作者署名 *</label>
+          <input type="text" id="essay-author" required>
         </div>
 
         <h4>（二）稿件信息</h4>
         <div class="form-group">
-          <label class="form-label">论文标题 *</label>
-          <input type="text" id="title" required>
+          <label class="form-label">标题 *</label>
+          <input type="text" id="essay-title" required>
         </div>
         <div class="form-group">
-          <label class="form-label">摘要（100-200字）</label>
-          <textarea id="abstract" rows="4"></textarea>
+          <label class="form-label">摘要（简短描述）</label>
+          <textarea id="essay-abstract" rows="3"></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">文件链接（Google Drive / 网盘链接）</label>
-          <input type="text" id="fileUrl" placeholder="粘贴你的文件分享链接">
+          <label class="form-label">文件链接（Google Drive / 网盘链接，选填）</label>
+          <input type="text" id="essay-fileUrl" placeholder="粘贴你的文件分享链接">
         </div>
 
         <button type="submit" class="btn-submit">提交稿件</button>
@@ -78,20 +144,124 @@
   </footer>
 
   <script>
-    const sb = window.supabase.createClient(
-      'https://zcpgslkimjjnmwatmkje.supabase.co',
-      'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6'
-    );
+    const SUPABASE_URL = 'https://zcpgslkimjjnmwatmkje.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    document.getElementById('submitForm').addEventListener('submit', async function(e) {
+    let selectedFile = null;
+
+    // Tab switching
+    function switchForm(type) {
+      var tabs = document.querySelectorAll('.submit-tab');
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      document.getElementById('submitMsg').style.display = 'none';
+      document.getElementById('submitError').style.display = 'none';
+
+      if (type === 'paper') {
+        tabs[0].classList.add('active');
+        document.getElementById('paperForm').style.display = 'block';
+        document.getElementById('essayForm').style.display = 'none';
+      } else {
+        tabs[1].classList.add('active');
+        document.getElementById('paperForm').style.display = 'none';
+        document.getElementById('essayForm').style.display = 'block';
+      }
+    }
+
+    // File selection
+    function handleFileSelect(input) {
+      var file = input.files[0];
+      if (!file) return;
+      if (file.type !== 'application/pdf') {
+        alert('请上传 PDF 格式文件');
+        input.value = '';
+        return;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        alert('文件大小不能超过 50MB');
+        input.value = '';
+        return;
+      }
+      selectedFile = file;
+      document.getElementById('file-name').textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + 'MB)';
+      document.getElementById('upload-area').classList.add('has-file');
+    }
+
+    // Paper form submit
+    document.getElementById('paperForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       document.getElementById('submitMsg').style.display = 'none';
       document.getElementById('submitError').style.display = 'none';
 
-      const { error } = await sb.from('articles').insert({
-        title: document.getElementById('title').value,
-        author: document.getElementById('author').value,
-        file_url: document.getElementById('fileUrl').value || null,
+      if (!selectedFile) {
+        alert('请上传论文 PDF 文件');
+        return;
+      }
+
+      // Show progress
+      document.getElementById('upload-progress').style.display = 'block';
+      document.getElementById('progress-fill').style.width = '30%';
+      document.getElementById('progress-text').textContent = '正在上传 PDF...';
+
+      // Upload PDF to Supabase Storage
+      var fileName = Date.now() + '_' + selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      var { data: uploadData, error: uploadError } = await sb.storage
+        .from('papers')
+        .upload(fileName, selectedFile);
+
+      if (uploadError) {
+        document.getElementById('upload-progress').style.display = 'none';
+        document.getElementById('submitError').style.display = 'block';
+        document.getElementById('submitError').textContent = '上传失败: ' + uploadError.message;
+        return;
+      }
+
+      document.getElementById('progress-fill').style.width = '70%';
+      document.getElementById('progress-text').textContent = '正在保存信息...';
+
+      // Get public URL
+      var { data: urlData } = sb.storage.from('papers').getPublicUrl(fileName);
+      var pdfUrl = urlData.publicUrl;
+
+      // Insert article record
+      var { error } = await sb.from('articles').insert({
+        title: document.getElementById('paper-title').value,
+        author: document.getElementById('paper-author').value,
+        excerpt: document.getElementById('paper-abstract').value,
+        tags: document.getElementById('paper-keywords').value || null,
+        file_url: pdfUrl,
+        type: 'paper',
+        status: 'pending'
+      });
+
+      document.getElementById('progress-fill').style.width = '100%';
+
+      if (error) {
+        document.getElementById('upload-progress').style.display = 'none';
+        document.getElementById('submitError').style.display = 'block';
+        document.getElementById('submitError').textContent = '提交失败: ' + error.message;
+      } else {
+        document.getElementById('upload-progress').style.display = 'none';
+        document.getElementById('submitMsg').style.display = 'block';
+        document.getElementById('paperForm').reset();
+        document.getElementById('file-name').textContent = '';
+        document.getElementById('upload-area').classList.remove('has-file');
+        selectedFile = null;
+      }
+    });
+
+    // Essay form submit
+    document.getElementById('essayForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      document.getElementById('submitMsg').style.display = 'none';
+      document.getElementById('submitError').style.display = 'none';
+
+      var { error } = await sb.from('articles').insert({
+        title: document.getElementById('essay-title').value,
+        author: document.getElementById('essay-author').value,
+        excerpt: document.getElementById('essay-abstract').value || null,
+        file_url: document.getElementById('essay-fileUrl').value || null,
+        type: 'essay',
         status: 'pending'
       });
 
@@ -100,7 +270,7 @@
         document.getElementById('submitError').textContent = '提交失败: ' + error.message;
       } else {
         document.getElementById('submitMsg').style.display = 'block';
-        document.getElementById('submitForm').reset();
+        document.getElementById('essayForm').reset();
       }
     });
   </script>

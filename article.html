@@ -9,6 +9,52 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    .pdf-viewer {
+      width: 100%;
+      height: 85vh;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      margin-top: 1.5rem;
+    }
+    .pdf-download {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.6rem 1.5rem;
+      background: var(--color-accent);
+      color: white;
+      border-radius: 6px;
+      font-family: var(--font-serif);
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .pdf-download:hover { background: #8a3f7d; color: white; }
+    .article-abstract {
+      background: var(--color-hero-bg);
+      border-left: 3px solid var(--color-accent);
+      padding: 1rem 1.5rem;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: var(--color-text-light);
+    }
+    .article-keywords {
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--color-text-light);
+    }
+    .article-keywords span {
+      display: inline-block;
+      background: var(--color-accent-light);
+      color: var(--color-accent);
+      padding: 2px 10px;
+      border-radius: 4px;
+      margin: 2px 4px 2px 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
 
@@ -34,6 +80,7 @@
     <div id="article-content" style="display:none;">
       <div class="article-meta-top">
         <span id="article-tag" class="tag tag-brown"></span>
+        <span id="article-type-badge" style="display:none; margin-left:8px;" class="tag"></span>
       </div>
 
       <h1 class="article-title" id="article-title"></h1>
@@ -42,9 +89,22 @@
         <p class="article-authors" id="article-author"></p>
       </div>
 
+      <!-- Abstract (for papers) -->
+      <div id="article-abstract" class="article-abstract" style="display:none;"></div>
+
+      <!-- Keywords (for papers) -->
+      <div id="article-keywords" class="article-keywords" style="display:none;"></div>
+
+      <!-- Text content (for essays) -->
       <div class="article-body" id="article-body"></div>
 
-      <p style="text-align:center; margin-top:3rem;">—— 完 ——</p>
+      <!-- PDF viewer (for papers) -->
+      <div id="pdf-section" style="display:none;">
+        <iframe id="pdf-viewer" class="pdf-viewer" src=""></iframe>
+        <a id="pdf-download" class="pdf-download" href="" target="_blank">下载 PDF 原文</a>
+      </div>
+
+      <p id="article-end" style="text-align:center; margin-top:3rem;">—— 完 ——</p>
     </div>
 
     <div id="article-error" style="display:none; text-align:center; padding:3rem; color:#c62828;">
@@ -68,10 +128,7 @@
       var params = new URLSearchParams(window.location.search);
       var id = params.get('id');
 
-      if (!id) {
-        showError();
-        return;
-      }
+      if (!id) { showError(); return; }
 
       var { data, error } = await sb
         .from('articles')
@@ -80,20 +137,61 @@
         .eq('status', 'approved')
         .single();
 
-      if (error || !data) {
-        showError();
-        return;
-      }
+      if (error || !data) { showError(); return; }
 
       document.title = data.title + ' — Shift 刊见';
       document.getElementById('article-title').textContent = data.title;
       document.getElementById('article-author').innerHTML = '&#9998; ' + escapeHtml(data.author);
-      document.getElementById('article-body').innerHTML = data.content || '<p>暂无内容</p>';
 
+      // Tags
       if (data.tags) {
         var tagEl = document.getElementById('article-tag');
         tagEl.textContent = data.tags;
         tagEl.className = 'tag tag-' + (data.tag_color || 'brown');
+      }
+
+      // Type badge
+      if (data.type === 'paper') {
+        var badge = document.getElementById('article-type-badge');
+        badge.textContent = '论文';
+        badge.style.display = 'inline-block';
+        badge.style.background = '#e3f2fd';
+        badge.style.color = '#1565c0';
+      }
+
+      // Paper type: show abstract, keywords, PDF
+      if (data.type === 'paper') {
+        // Abstract
+        if (data.excerpt) {
+          document.getElementById('article-abstract').innerHTML = '<strong>摘要：</strong>' + escapeHtml(data.excerpt);
+          document.getElementById('article-abstract').style.display = 'block';
+        }
+
+        // Keywords
+        if (data.tags) {
+          var keywords = data.tags.split(/[,，]/).map(function(k) {
+            return '<span>' + escapeHtml(k.trim()) + '</span>';
+          }).join(' ');
+          document.getElementById('article-keywords').innerHTML = '<strong>关键词：</strong>' + keywords;
+          document.getElementById('article-keywords').style.display = 'block';
+        }
+
+        // PDF embed
+        if (data.file_url) {
+          document.getElementById('pdf-viewer').src = data.file_url;
+          document.getElementById('pdf-download').href = data.file_url;
+          document.getElementById('pdf-section').style.display = 'block';
+          document.getElementById('article-end').style.display = 'none';
+        }
+
+        // Also show text content if reviewer added any
+        if (data.content) {
+          document.getElementById('article-body').innerHTML = data.content;
+        }
+
+      } else {
+        // Essay type: show text content
+        document.getElementById('article-body').innerHTML = data.content || '<p>暂无内容</p>';
       }
 
       document.getElementById('article-loading').style.display = 'none';
