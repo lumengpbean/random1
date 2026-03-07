@@ -61,19 +61,26 @@
   <script>
     var container = document.getElementById('articleCards');
 
+    function escapeHtml(str) {
+      if (!str) return '';
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
     function createCard(title, author, tags, tagColor, excerpt, url, searchText) {
       var card = document.createElement('a');
-      card.href = url;
+      card.href = escapeHtml(url);
       card.className = 'card-link';
       card.setAttribute('data-search', searchText);
       card.innerHTML =
         '<article class="card">' +
           '<div class="card-tags">' +
-            '<span class="tag tag-' + (tagColor || 'brown') + '">' + (tags || '') + '</span>' +
+            '<span class="tag tag-' + escapeHtml(tagColor || 'brown') + '">' + escapeHtml(tags || '') + '</span>' +
           '</div>' +
-          '<h3 class="card-title">' + title + '</h3>' +
-          '<p class="card-author">&#9998; ' + author + '</p>' +
-          '<p class="card-excerpt">' + (excerpt || '') + '</p>' +
+          '<h3 class="card-title">' + escapeHtml(title) + '</h3>' +
+          '<p class="card-author">&#9998; ' + escapeHtml(author) + '</p>' +
+          '<p class="card-excerpt">' + escapeHtml(excerpt || '') + '</p>' +
         '</article>';
       return card;
     }
