@@ -48,10 +48,15 @@ a:hover {
 .header-inner {
   max-width: 1100px;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   gap: 2rem;
+}
+
+.header-left {
+  grid-column: 2;
+  text-align: center;
 }
 
 .header-subtitle {
@@ -62,7 +67,7 @@ a:hover {
 
 .header-title {
   font-family: var(--font-display);
-  font-size: 2.8rem;
+  font-size: 4.2rem;
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.2;
@@ -86,6 +91,8 @@ a:hover {
 }
 
 .header-right {
+  grid-column: 3;
+  justify-self: end;
   text-align: right;
   padding-top: 1rem;
 }
@@ -371,7 +378,16 @@ a:hover {
   font-size: 0.9rem;
   color: var(--color-text-light);
   display: inline-block;
-  margin-bottom: 0.3rem;
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 0.85rem);
+  left: calc(env(safe-area-inset-left, 0px) + 0.85rem);
+  z-index: 1000;
+  background: rgba(250, 248, 245, 0.94);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(4px);
 }
 
 .back-home:hover {
@@ -448,11 +464,18 @@ a:hover {
   }
 
   .header-inner {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .header-left {
+    grid-column: 1;
   }
 
   .header-right {
-    text-align: left;
+    grid-column: 1;
+    justify-self: center;
+    text-align: center;
     padding-top: 0;
   }
 
@@ -478,11 +501,18 @@ a:hover {
     align-items: flex-start;
     gap: 0.8rem;
   }
+
+  .back-home {
+    top: calc(env(safe-area-inset-top, 0px) + 0.6rem);
+    left: calc(env(safe-area-inset-left, 0px) + 0.6rem);
+    font-size: 0.85rem;
+    padding: 0.3rem 0.7rem;
+  }
 }
 
 @media (max-width: 600px) {
   .header-title {
-    font-size: 2rem;
+    font-size: 3rem;
   }
 
   .site-nav li a {
