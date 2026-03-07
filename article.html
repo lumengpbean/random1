@@ -178,20 +178,28 @@
 
         // PDF embed
         if (data.file_url) {
-          document.getElementById('pdf-viewer').src = data.file_url;
-          document.getElementById('pdf-download').href = data.file_url;
+          var cleanUrl = extractUrl(data.file_url);
+          document.getElementById('pdf-viewer').src = cleanUrl;
+          document.getElementById('pdf-download').href = cleanUrl;
           document.getElementById('pdf-section').style.display = 'block';
           document.getElementById('article-end').style.display = 'none';
         }
 
         // Also show text content if reviewer added any
         if (data.content) {
-          document.getElementById('article-body').innerHTML = data.content;
+          document.getElementById('article-body').innerHTML = renderContent(data.content);
         }
 
       } else {
         // Essay type: show text content
-        document.getElementById('article-body').innerHTML = data.content || '<p>暂无内容</p>';
+        document.getElementById('article-body').innerHTML = renderContent(data.content || '');
+
+        // Show file link for essays (e.g. cloud drive link)
+        if (data.file_url) {
+          var essayUrl = extractUrl(data.file_url);
+          document.getElementById('article-body').innerHTML +=
+            '<p style="margin-top:1.5rem;"><a href="' + escapeHtml(essayUrl) + '" target="_blank" style="color:var(--color-accent); text-decoration:none; font-weight:600;">📂 查看原稿文件</a></p>';
+        }
       }
 
       document.getElementById('article-loading').style.display = 'none';
@@ -203,11 +211,42 @@
       document.getElementById('article-error').style.display = 'block';
     }
 
+    function extractUrl(str) {
+      if (!str) return '';
+      var match = str.match(/https?:\/\/[^\s，。）)]+/);
+      return match ? match[0] : str;
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
       var div = document.createElement('div');
       div.textContent = str;
       return div.innerHTML;
+    }
+
+    function renderContent(str) {
+      if (!str) return '<p>暂无内容</p>';
+      // Escape HTML first, then apply markdown-like transforms
+      var lines = str.split('\n');
+      var html = '';
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var escaped = escapeHtml(line);
+        if (/^# (.+)/.test(line)) {
+          html += '<h2>' + escapeHtml(line.slice(2)) + '</h2>\n';
+        } else if (/^> (.+)/.test(line)) {
+          html += '<blockquote><p>' + escapeHtml(line.slice(2)) + '</p></blockquote>\n';
+        } else if (line.trim() === '---') {
+          html += '<hr>\n';
+        } else if (line.trim() === '') {
+          html += '</p><p>';
+        } else {
+          // Bold: **text**
+          escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+          html += escaped;
+        }
+      }
+      return '<p>' + html + '</p>';
     }
 
     loadArticle();

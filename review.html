@@ -575,20 +575,20 @@ Wang, L. (2021). 论文标题.</pre>
                 return '<div class="article-item">' +
                     '<div class="article-item-top">' +
                     '<div class="article-info">' +
-                    '<h4>' + escapeHtml(item.title) +
-                    ' <span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
-                    '</h4>' +
-                    '<p>作者: ' + escapeHtml(item.author) + ' | ' +
-                    (item.type === 'paper' ? '论文' : '非论文') + ' | ' +
-                    new Date(item.created_at).toLocaleDateString() + '</p>' +
-                    (item.excerpt ? '<p style="margin-top:6px; color:#444;">' + escapeHtml(item.excerpt) + '</p>' : '') +
-                    (item.file_url ? '<a href="' + escapeHtml(item.file_url) + '" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">查看原稿文件</a>' : '') +
-                    '<div class="vote-info">' +
-                    '<div class="vote-bar">' + dots + '</div>' +
-                    '<span style="color:var(--success);">赞成 ' + approveCount + '</span> / ' +
-                    '<span style="color:var(--danger);">反对 ' + rejectCount + '</span>' +
-                    ' (需 ' + REQUIRED_APPROVALS + ' 票赞成)' +
-                    '</div>' +
+                        '<h4>' + escapeHtml(item.title) +
+                            ' <span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
+                        '</h4>' +
+                        '<p>作者: ' + escapeHtml(item.author) + ' | ' +
+                            (item.type === 'paper' ? '论文' : '非论文') + ' | ' +
+                            new Date(item.created_at).toLocaleDateString() + '</p>' +
+                        (item.excerpt ? '<p style="margin-top:6px; color:#444;">' + escapeHtml(item.excerpt) + '</p>' : '') +
+                        (item.file_url ? '<a href="' + escapeHtml(extractUrl(item.file_url)) + '" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">查看原稿文件</a>' : '') +
+                        '<div class="vote-info">' +
+                            '<div class="vote-bar">' + dots + '</div>' +
+                            '<span style="color:var(--success);">赞成 ' + approveCount + '</span> / ' +
+                            '<span style="color:var(--danger);">反对 ' + rejectCount + '</span>' +
+                            ' (需 ' + REQUIRED_APPROVALS + ' 票赞成)' +
+                        '</div>' +
                     '</div>' +
                     '<div style="flex-shrink:0;">' + actionHtml + '</div>' +
                     '</div>' +
@@ -662,113 +662,150 @@ Wang, L. (2021). 论文标题.</pre>
             } else {
                 document.getElementById('edit-file-link').innerHTML = '<span style="color:#999;">无文件链接</span>';
             }
-
-            document.getElementById('review-ui').classList.add('hidden');
-            document.getElementById('editor-ui').classList.remove('hidden');
-            switchTab('write');
+        } else {
+            alert('投票成功（反对）。');
         }
 
-        function closeEditor() {
-            currentArticleId = null;
-            document.getElementById('editor-ui').classList.add('hidden');
-            document.getElementById('review-ui').classList.remove('hidden');
-            loadArticles();
+        loadArticles();
+    }
+
+    // ===== Editor (same as admin.html) =====
+
+    async function openEditor(id) {
+        const { data, error } = await sb.from('articles').select('*').eq('id', id).single();
+        if (error) { alert('加载失败: ' + error.message); return; }
+
+        currentArticleId = id;
+        document.getElementById('edit-title').value = data.title || '';
+        document.getElementById('edit-author').value = data.author || '';
+        document.getElementById('edit-tags').value = data.tags || '';
+        document.getElementById('edit-tag-color').value = data.tag_color || 'brown';
+        document.getElementById('edit-excerpt').value = data.excerpt || '';
+        document.getElementById('edit-content').value = data.content || '';
+        document.getElementById('editor-title').textContent = '编辑: ' + data.title;
+
+        if (data.file_url) {
+            document.getElementById('edit-file-link').innerHTML =
+                '<a href="' + escapeHtml(extractUrl(data.file_url)) + '" target="_blank" style="color:#3498db;">查看原稿文件</a>';
+        } else {
+            document.getElementById('edit-file-link').innerHTML = '<span style="color:#999;">无文件链接</span>';
         }
 
-        // Tab switching
-        function switchTab(tab) {
-            var tabs = document.querySelectorAll('.tab');
-            tabs.forEach(function (t) { t.classList.remove('active'); });
+        document.getElementById('review-ui').classList.add('hidden');
+        document.getElementById('editor-ui').classList.remove('hidden');
+        switchTab('write');
+    }
 
-            if (tab === 'write') {
-                tabs[0].classList.add('active');
-                document.getElementById('edit-content').style.display = 'block';
-                document.getElementById('content-preview').style.display = 'none';
+    function closeEditor() {
+        currentArticleId = null;
+        document.getElementById('editor-ui').classList.add('hidden');
+        document.getElementById('review-ui').classList.remove('hidden');
+        loadArticles();
+    }
+
+    // Tab switching
+    function switchTab(tab) {
+        var tabs = document.querySelectorAll('.tab');
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+
+        if (tab === 'write') {
+            tabs[0].classList.add('active');
+            document.getElementById('edit-content').style.display = 'block';
+            document.getElementById('content-preview').style.display = 'none';
+        } else {
+            tabs[1].classList.add('active');
+            document.getElementById('edit-content').style.display = 'none';
+            document.getElementById('content-preview').style.display = 'block';
+            document.getElementById('content-preview').innerHTML = textToHtml(document.getElementById('edit-content').value);
+        }
+    }
+
+    // Plain text to HTML converter
+    function textToHtml(text) {
+        if (!text) return '<p style="color:#999;">暂无内容</p>';
+        var lines = text.split('\n');
+        var html = '';
+        var i = 0;
+        while (i < lines.length) {
+            var line = lines[i].trim();
+            if (line === '') { i++; continue; }
+            if (line === '---' || line === '———') {
+                html += '<hr>';
+            } else if (line.startsWith('# ')) {
+                html += '<h2>' + escapeHtml(line.substring(2)) + '</h2>';
+            } else if (line.startsWith('> ')) {
+                html += '<blockquote><p>' + formatInline(line.substring(2)) + '</p></blockquote>';
             } else {
                 tabs[1].classList.add('active');
                 document.getElementById('edit-content').style.display = 'none';
                 document.getElementById('content-preview').style.display = 'block';
                 document.getElementById('content-preview').innerHTML = textToHtml(document.getElementById('edit-content').value);
             }
+            i++;
         }
+        return html;
+    }
 
-        // Plain text to HTML converter
-        function textToHtml(text) {
-            if (!text) return '<p style="color:#999;">暂无内容</p>';
-            var lines = text.split('\n');
-            var html = '';
-            var i = 0;
-            while (i < lines.length) {
-                var line = lines[i].trim();
-                if (line === '') { i++; continue; }
-                if (line === '---' || line === '———') {
-                    html += '<hr>';
-                } else if (line.startsWith('# ')) {
-                    html += '<h2>' + escapeHtml(line.substring(2)) + '</h2>';
-                } else if (line.startsWith('> ')) {
-                    html += '<blockquote><p>' + formatInline(line.substring(2)) + '</p></blockquote>';
-                } else {
-                    html += '<p>' + formatInline(line) + '</p>';
-                }
-                i++;
-            }
-            return html;
-        }
+    function formatInline(text) {
+        text = escapeHtml(text);
+        text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        return text;
+    }
 
-        function formatInline(text) {
-            text = escapeHtml(text);
-            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            return text;
-        }
+    // Save & publish
+    async function publishArticle() {
+        var content = document.getElementById('edit-content').value;
+        var htmlContent = textToHtml(content);
 
-        // Save & publish
-        async function publishArticle() {
-            var content = document.getElementById('edit-content').value;
-            var htmlContent = textToHtml(content);
+        const { error } = await sb.from('articles').update({
+            title: document.getElementById('edit-title').value,
+            author: document.getElementById('edit-author').value,
+            tags: document.getElementById('edit-tags').value,
+            tag_color: document.getElementById('edit-tag-color').value,
+            excerpt: document.getElementById('edit-excerpt').value,
+            content: htmlContent,
+            status: 'approved'
+        }).eq('id', currentArticleId);
 
-            const { error } = await sb.from('articles').update({
-                title: document.getElementById('edit-title').value,
-                author: document.getElementById('edit-author').value,
-                tags: document.getElementById('edit-tags').value,
-                tag_color: document.getElementById('edit-tag-color').value,
-                excerpt: document.getElementById('edit-excerpt').value,
-                content: htmlContent,
-                status: 'approved'
-            }).eq('id', currentArticleId);
+        if (error) { alert('发布失败: ' + error.message); return; }
+        alert('发布成功！文章已上线。');
+        closeEditor();
+    }
 
-            if (error) { alert('发布失败: ' + error.message); return; }
-            alert('发布成功！文章已上线。');
-            closeEditor();
-        }
+    // Save draft (keep as reviewed, don't publish yet)
+    async function saveAsDraft() {
+        var content = document.getElementById('edit-content').value;
+        var htmlContent = textToHtml(content);
 
-        // Save draft (keep as reviewed, don't publish yet)
-        async function saveAsDraft() {
-            var content = document.getElementById('edit-content').value;
-            var htmlContent = textToHtml(content);
+        const { error } = await sb.from('articles').update({
+            title: document.getElementById('edit-title').value,
+            author: document.getElementById('edit-author').value,
+            tags: document.getElementById('edit-tags').value,
+            tag_color: document.getElementById('edit-tag-color').value,
+            excerpt: document.getElementById('edit-excerpt').value,
+            content: htmlContent,
+            status: 'reviewed'
+        }).eq('id', currentArticleId);
 
-            const { error } = await sb.from('articles').update({
-                title: document.getElementById('edit-title').value,
-                author: document.getElementById('edit-author').value,
-                tags: document.getElementById('edit-tags').value,
-                tag_color: document.getElementById('edit-tag-color').value,
-                excerpt: document.getElementById('edit-excerpt').value,
-                content: htmlContent,
-                status: 'reviewed'
-            }).eq('id', currentArticleId);
+        if (error) { alert('保存失败: ' + error.message); return; }
+        alert('已保存，稿件仍为"已通过"状态，尚未发布。');
+    }
 
-            if (error) { alert('保存失败: ' + error.message); return; }
-            alert('已保存，稿件仍为"已通过"状态，尚未发布。');
-        }
+    function extractUrl(str) {
+        if (!str) return '';
+        var match = str.match(/https?:\/\/[^\s，。）)]+/);
+        return match ? match[0] : str;
+    }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            var div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
+    function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
 
-        checkAuth();
-    </script>
+    checkAuth();
+</script>
 </body>
 
 </html>

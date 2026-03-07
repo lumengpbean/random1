@@ -261,7 +261,7 @@ Wang, L. (2021). 论文标题.</pre>
                             <span class="status-badge status-${item.status}">${item.status}</span>
                         </h4>
                         <p>作者: ${escapeHtml(item.author)} | ${item.type === 'paper' ? '📄 论文' : '📝 非论文'} | 时间: ${new Date(item.created_at).toLocaleString()}${voteHtml}</p>
-                        ${item.file_url ? `<a href="${escapeHtml(item.file_url)}" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">📂 查看原稿文件</a>` : ''}
+                        ${item.file_url ? `<a href="${escapeHtml(extractUrl(item.file_url))}" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">📂 查看原稿文件</a>` : ''}
                     </div>
                     <div class="btn-group">
                         <button class="btn btn-edit" onclick="openEditor('${item.id}')">编辑发布</button>
@@ -289,7 +289,7 @@ Wang, L. (2021). 论文标题.</pre>
 
         if (data.file_url) {
             document.getElementById('edit-file-link').innerHTML =
-                `<a href="${escapeHtml(data.file_url)}" target="_blank" style="color:#3498db;">📂 ${escapeHtml(data.file_url)}</a>`;
+                `<a href="${escapeHtml(extractUrl(data.file_url))}" target="_blank" style="color:#3498db;">📂 查看原稿文件</a>`;
         } else {
             document.getElementById('edit-file-link').innerHTML = '<span style="color:#999;">无文件链接</span>';
         }
@@ -353,6 +353,12 @@ Wang, L. (2021). 论文标题.</pre>
         return text;
     }
 
+    function extractUrl(str) {
+        if (!str) return '';
+        var match = str.match(/https?:\/\/[^\s，。）)]+/);
+        return match ? match[0] : str;
+    }
+
     function escapeHtml(str) {
         if (!str) return '';
         var div = document.createElement('div');
@@ -365,17 +371,22 @@ Wang, L. (2021). 论文标题.</pre>
         var content = document.getElementById('edit-content').value;
         var htmlContent = textToHtml(content);
 
-        const { error } = await sb.from('articles').update({
+        // First save edits (without changing status to approved)
+        const { error: saveError } = await sb.from('articles').update({
             title: document.getElementById('edit-title').value,
             author: document.getElementById('edit-author').value,
             tags: document.getElementById('edit-tags').value,
             tag_color: document.getElementById('edit-tag-color').value,
             excerpt: document.getElementById('edit-excerpt').value,
             content: htmlContent,
-            status: 'approved'
         }).eq('id', currentArticleId);
 
-        if (error) { alert('发布失败: ' + error.message); return; }
+        if (saveError) { alert('保存失败: ' + saveError.message); return; }
+
+        // Then publish via server-side function that checks vote count
+        const { error: publishError } = await sb.rpc('publish_article', { article_id: currentArticleId });
+
+        if (publishError) { alert('发布失败: ' + publishError.message); return; }
         alert('发布成功！文章已上线。');
         closeEditor();
     }
