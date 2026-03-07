@@ -4,15 +4,12 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { textToHtml, extractUrl } from '@/lib/format'
 import type { Article, Review } from '@/lib/types'
-import type { User } from '@supabase/supabase-js'
 import s from '@/styles/Admin.module.css'
 
 const REQUIRED_APPROVALS = 4
 
 export default function ReviewPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [userId, setUserId] = useState<string | null>(null)
   const [articles, setArticles] = useState<Article[]>([])
   const [reviewMap, setReviewMap] = useState<Record<string, Review[]>>({})
   const [comments, setComments] = useState<Record<string, string>>({})
@@ -25,78 +22,53 @@ export default function ReviewPage() {
   const supabase = createClient()
 
   const loadArticles = useCallback(async () => {
-    const { data: arts } = await supabase
-      .from('articles')
-      .select('*')
-      .in('status', ['pending', 'reviewed'])
-      .order('created_at', { ascending: false })
-
-    const list = (arts as Article[]) || []
-    setArticles(list)
-
-    if (list.length > 0) {
-      const ids = list.map((a) => a.id)
-      const { data: reviews } = await supabase.from('reviews').select('*').in('article_id', ids)
-      const map: Record<string, Review[]> = {}
-      ;(reviews as Review[] || []).forEach((r) => {
-        if (!map[r.article_id]) map[r.article_id] = []
-        map[r.article_id].push(r)
-      })
-      setReviewMap(map)
-    }
-  }, [supabase])
+    const res = await fetch('/api/review/articles')
+    if (!res.ok) return
+    const data = await res.json()
+    setArticles(data.articles || [])
+    setUserId(data.userId || null)
+    const map: Record<string, Review[]> = {}
+    ;(data.reviews as Review[] || []).forEach((r: Review) => {
+      if (!map[r.article_id]) map[r.article_id] = []
+      map[r.article_id].push(r)
+    })
+    setReviewMap(map)
+  }, [])
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user: u } }) => {
-      if (u) { setUser(u); loadArticles() }
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function signIn() {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { alert('登录失败: ' + error.message); return }
-    const { data: { user: u } } = await supabase.auth.getUser()
-    setUser(u)
     loadArticles()
-  }
+  }, [loadArticles])
 
   async function signOut() {
     await supabase.auth.signOut()
-    setUser(null)
+    window.location.href = '/login'
   }
 
   async function castVote(articleId: string, vote: 'approve' | 'reject') {
-    if (!user) return
     const comment = comments[articleId] || null
 
-    const { error } = await supabase.from('reviews').insert({
-      article_id: articleId,
-      reviewer_id: user.id,
-      vote,
-      comment,
+    const res = await fetch('/api/review/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ articleId, vote, comment }),
     })
 
-    if (error) {
-      if (error.message.includes('unique') || error.message.includes('duplicate')) {
+    if (!res.ok) {
+      const data = await res.json()
+      if (data.error === 'already_voted') {
         alert('你已经对这篇稿件投过票了。')
       } else {
-        alert('投票失败: ' + error.message)
+        alert('投票失败: ' + data.error)
       }
       return
     }
 
+    const data = await res.json()
     if (vote === 'approve') {
-      const { data: reviews } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('article_id', articleId)
-        .eq('vote', 'approve')
-
-      if (reviews && reviews.length >= REQUIRED_APPROVALS) {
-        await supabase.from('articles').update({ status: 'reviewed' }).eq('id', articleId)
+      if (data.threshold_reached) {
         alert(`投票成功！该稿件已达到 ${REQUIRED_APPROVALS} 票赞成，现在可以编辑发布了。`)
       } else {
-        const remaining = REQUIRED_APPROVALS - (reviews?.length || 0)
+        const remaining = REQUIRED_APPROVALS - (data.count || 0)
         alert(`投票成功！还需 ${remaining} 票赞成。`)
       }
     } else {
@@ -121,12 +93,12 @@ export default function ReviewPage() {
 
   async function publishArticle() {
     if (!editing) return
-    const { error } = await supabase.from('articles').update({
-      ...editFields,
-      content: textToHtml(editFields.content),
-      status: 'approved',
-    }).eq('id', editing.id)
-    if (error) { alert('发布失败: ' + error.message); return }
+    const res = await fetch('/api/admin/articles', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editing.id, action: 'publish', fields: editFields }),
+    })
+    if (!res.ok) { alert('发布失败: ' + (await res.json()).error); return }
     alert('发布成功！文章已上线。')
     setEditing(null)
     loadArticles()
@@ -134,29 +106,13 @@ export default function ReviewPage() {
 
   async function saveAsDraft() {
     if (!editing) return
-    const { error } = await supabase.from('articles').update({
-      ...editFields,
-      content: textToHtml(editFields.content),
-      status: 'reviewed',
-    }).eq('id', editing.id)
-    if (error) { alert('保存失败: ' + error.message); return }
+    const res = await fetch('/api/admin/articles', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editing.id, action: 'save', fields: { ...editFields, status: 'reviewed' } }),
+    })
+    if (!res.ok) { alert('保存失败: ' + (await res.json()).error); return }
     alert('已保存，稿件仍为"已通过"状态，尚未发布。')
-  }
-
-  if (!user) {
-    return (
-      <div className={s.page}>
-        <div className={s.container}>
-          <div className={s.loginBox}>
-            <h2>审稿员登录</h2>
-            <p style={{ color: '#666', fontSize: '0.9rem' }}>登录后可对待审稿件进行投票</p>
-            <input className={s.input} type="email" placeholder="审稿员邮箱" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <input className={s.input} type="password" placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button className={`${s.btn} ${s.btnPrimary}`} style={{ width: '100%' }} onClick={signIn}>登录</button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   if (editing) {
@@ -225,7 +181,6 @@ export default function ReviewPage() {
         <div className={s.topBar}>
           <h2>待审稿件</h2>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', color: '#666' }}>{user.email}</span>
             <button className={s.signOutBtn} onClick={signOut}>退出登录</button>
           </div>
         </div>
@@ -241,7 +196,7 @@ export default function ReviewPage() {
             const reviews = reviewMap[item.id] || []
             const approveCount = reviews.filter((r) => r.vote === 'approve').length
             const rejectCount = reviews.filter((r) => r.vote === 'reject').length
-            const myVote = reviews.find((r) => r.reviewer_id === user.id)
+            const myVote = reviews.find((r) => r.reviewer_id === userId)
 
             const dots = []
             for (let i = 0; i < approveCount; i++) dots.push(<span key={`a${i}`} className={`${s.voteDot} ${s.voteDotApprove}`} title="赞成" />)

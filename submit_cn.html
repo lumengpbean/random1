@@ -38,6 +38,12 @@
 
       <h3>在线投稿表单</h3>
 
+      <!-- Honeypot - invisible to humans, bots fill it -->
+      <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+        <label>Leave this empty</label>
+        <input type="text" id="hp-field" name="website" tabindex="-1" autocomplete="off">
+      </div>
+
       <form id="submitForm" class="submit-form">
         <h4>（一）作者信息</h4>
         <div class="form-group">
@@ -59,7 +65,6 @@
           <input type="text" id="fileUrl" placeholder="粘贴你的文件分享链接">
         </div>
 
-        <!-- 增加了一个 disabled 样式用于提交过程中禁用按钮 -->
         <button type="submit" id="submitBtn" class="btn-submit">提交稿件</button>
       </form>
 
@@ -85,28 +90,36 @@
       'sb_publishable_X15UnM_6AG7rXka9SV9-fw_K3HIlbB6'
     );
 
+    var pageLoadTime = Date.now();
+
+    // Anti-spam check
+    function isSpam() {
+      if (document.getElementById('hp-field').value) return true;
+      if (Date.now() - pageLoadTime < 5000) return true;
+      return false;
+    }
+
     document.getElementById('submitForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
-      // 获取 DOM 元素
+
+      if (isSpam()) { alert('提交失败，请刷新页面重试。'); return; }
+
       const submitBtn = document.getElementById('submitBtn');
       const msgSuccess = document.getElementById('submitMsg');
       const msgError = document.getElementById('submitError');
-      const titleInput = document.getElementById('title').value.trim(); // 去除首尾空格
+      const titleInput = document.getElementById('title').value.trim();
       const authorInput = document.getElementById('author').value.trim();
+      const abstractInput = document.getElementById('abstract').value.trim();
       const fileUrlInput = document.getElementById('fileUrl').value.trim();
 
-      // 重置状态
       msgSuccess.style.display = 'none';
       msgError.style.display = 'none';
-      
-      // 禁用按钮防止重复点击
+
       submitBtn.disabled = true;
       submitBtn.innerText = "正在检查...";
 
       try {
-        // --- 第一步：检查重复投稿次数 ---
-        // 我们只查询数量 (count)，不拉取具体数据 (head: true)
+        // Check duplicate submissions
         const { count, error: searchError } = await sb
           .from('articles')
           .select('*', { count: 'exact', head: true })
@@ -116,35 +129,31 @@
           throw new Error('查询数据库失败，请检查网络或联系管理员。');
         }
 
-        // 如果该标题已经存在 3 次或更多，阻止提交
         if (count >= 3) {
           throw new Error('该论文标题已重复投稿超过 3 次，无法再次提交。');
         }
 
-        // --- 第二步：执行插入操作 ---
+        // Insert article
         const { error: insertError } = await sb.from('articles').insert({
           title: titleInput,
           author: authorInput,
+          excerpt: abstractInput || null,
           file_url: fileUrlInput || null,
-          status: 'pending' // 确保你的数据库有这个字段，或者去掉这行
+          status: 'pending'
         });
 
         if (insertError) {
           throw insertError;
         }
 
-        // --- 成功 ---
         msgSuccess.style.display = 'block';
         document.getElementById('submitForm').reset();
 
       } catch (err) {
-        // --- 失败处理 ---
         console.error(err);
         msgError.style.display = 'block';
-        // 显示具体的错误信息给用户
-        msgError.textContent = '提交失败: ' + (err.message || err.error_description || '未知错误');
+        msgError.textContent = '提交失败: ' + (err.message || '未知错误');
       } finally {
-        // 恢复按钮状态
         submitBtn.disabled = false;
         submitBtn.innerText = "提交稿件";
       }

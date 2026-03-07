@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation'
 import s from '@/styles/Header.module.css'
 
 const NAV_ITEMS = [
-  { href: '/', label: '\u{1F3E0} 首页 · 当前卷' },
-  { href: '/library', label: '\u{1F4DA} 文库' },
-  { href: '/submit', label: '\u2709 投稿／转换' },
+  { href: '/', label: '首页 · 当前卷' },
+  { href: '/library', label: '文库' },
+  { href: '/submit', label: '投稿／转换' },
 ]
 
 export default function Header({ compact = false }: { compact?: boolean }) {
@@ -38,15 +38,14 @@ export default function Header({ compact = false }: { compact?: boolean }) {
       <header className={s.header}>
         <div className={s.inner}>
           <div className={s.left}>
-            <p className={s.subtitle}>* 新叙事 · 开源期刊 · 女性主义知识共同体</p>
+            <p className={s.subtitle}>* 新叙事 · 开源刊见 · 知识与表达共同体</p>
             <h1 className={s.title}>
-              Shift <span className={s.iconShift}>&#8629;</span> 期刊
+              Shift <span className={s.iconShift}>&#8629;</span> 刊见
             </h1>
-            <p className={s.tagline}>&#9201; She Holds In Fist the Truth. | she · shift · 转换</p>
           </div>
           <div className={s.right}>
-            <p className={s.issn}>&#9679; ISSN 3008-SHFT · 2026 创刊号</p>
-            <p className={s.motto}>&#9825; 由女性书写，为未来署名</p>
+            <p className={s.issn}>&#9679; SHIFT 3008 · 2026 创刊号</p>
+            <p className={s.motto}> 在这里，观点不必服从旧秩序</p>
           </div>
         </div>
       </header>

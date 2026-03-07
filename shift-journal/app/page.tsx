@@ -25,7 +25,7 @@ export default async function HomePage() {
       <Hero />
       <section className={s.section}>
         <div className={s.sectionHeader}>
-          <h2 className={s.sectionTitle}>&#128209; 最新首发 · Shift 转换</h2>
+          <h2 className={s.sectionTitle}>最新首发 · &quot;Shift 转换&quot;</h2>
           <Link href="/library" className={s.browseAll}>&#9633; 浏览全刊目录</Link>
         </div>
         <div className={s.cards}>

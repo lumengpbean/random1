@@ -7,9 +7,6 @@ import type { Article, Review } from '@/lib/types'
 import s from '@/styles/Admin.module.css'
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [articles, setArticles] = useState<Article[]>([])
   const [reviewMap, setReviewMap] = useState<Record<string, Review[]>>({})
   const [showAll, setShowAll] = useState(false)
@@ -22,47 +19,25 @@ export default function AdminPage() {
   const supabase = createClient()
 
   const fetchArticles = useCallback(async () => {
-    let query = supabase.from('articles').select('*')
-    if (!showAll) query = query.neq('status', 'approved')
-    const { data } = await query.order('created_at', { ascending: false })
-    const arts = (data as Article[]) || []
-    setArticles(arts)
-
-    if (arts.length > 0) {
-      const ids = arts.map((a) => a.id)
-      const { data: reviews } = await supabase.from('reviews').select('*').in('article_id', ids)
-      const map: Record<string, Review[]> = {}
-      ;(reviews as Review[] || []).forEach((r) => {
-        if (!map[r.article_id]) map[r.article_id] = []
-        map[r.article_id].push(r)
-      })
-      setReviewMap(map)
-    }
-  }, [showAll, supabase])
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setAuthed(true)
-        fetchArticles()
-      }
+    const res = await fetch(`/api/admin/articles?showAll=${showAll}`)
+    if (!res.ok) return
+    const data = await res.json()
+    setArticles(data.articles || [])
+    const map: Record<string, Review[]> = {}
+    ;(data.reviews as Review[] || []).forEach((r: Review) => {
+      if (!map[r.article_id]) map[r.article_id] = []
+      map[r.article_id].push(r)
     })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    setReviewMap(map)
+  }, [showAll])
 
   useEffect(() => {
-    if (authed) fetchArticles()
-  }, [showAll]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function signIn() {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { alert('权限验证失败: ' + error.message); return }
-    setAuthed(true)
     fetchArticles()
-  }
+  }, [fetchArticles])
 
   async function signOut() {
     await supabase.auth.signOut()
-    setAuthed(false)
+    window.location.href = '/login'
   }
 
   function openEditor(art: Article) {
@@ -80,12 +55,12 @@ export default function AdminPage() {
 
   async function publishArticle() {
     if (!editing) return
-    const { error } = await supabase.from('articles').update({
-      ...editFields,
-      content: textToHtml(editFields.content),
-      status: 'approved',
-    }).eq('id', editing.id)
-    if (error) { alert('发布失败: ' + error.message); return }
+    const res = await fetch('/api/admin/articles', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editing.id, action: 'publish', fields: editFields }),
+    })
+    if (!res.ok) { alert('发布失败: ' + (await res.json()).error); return }
     alert('发布成功！文章已上线。')
     setEditing(null)
     fetchArticles()
@@ -93,28 +68,36 @@ export default function AdminPage() {
 
   async function saveAsDraft() {
     if (!editing) return
-    const { error } = await supabase.from('articles').update({
-      ...editFields,
-      content: textToHtml(editFields.content),
-      status: 'pending',
-    }).eq('id', editing.id)
-    if (error) { alert('保存失败: ' + error.message); return }
+    const res = await fetch('/api/admin/articles', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editing.id, action: 'save', fields: { ...editFields, status: 'pending' } }),
+    })
+    if (!res.ok) { alert('保存失败: ' + (await res.json()).error); return }
     alert('已保存为草稿。')
   }
 
   async function rejectArticle(id?: string) {
     const targetId = id || editing?.id
     if (!targetId) return
-    const { error } = await supabase.from('articles').update({ status: 'rejected' }).eq('id', targetId)
-    if (error) { alert('操作失败: ' + error.message); return }
-    if (id) { fetchArticles() }
-    else { alert('已驳回。'); setEditing(null); fetchArticles() }
+    const res = await fetch('/api/admin/articles', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: targetId, action: 'reject' }),
+    })
+    if (!res.ok) { alert('操作失败: ' + (await res.json()).error); return }
+    if (!id) { alert('已驳回。'); setEditing(null) }
+    fetchArticles()
   }
 
   async function deleteArticle(id: string) {
     if (!confirm('确定要永久删除这篇稿件吗？此操作不可撤销。')) return
-    const { error } = await supabase.from('articles').delete().eq('id', id)
-    if (error) { alert('删除失败: ' + error.message); return }
+    const res = await fetch('/api/admin/articles', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) { alert('删除失败: ' + (await res.json()).error); return }
     if (editing?.id === id) setEditing(null)
     fetchArticles()
   }
@@ -125,21 +108,6 @@ export default function AdminPage() {
       : status === 'rejected' ? s.statusRejected
       : s.statusApproved
     return <span className={`${s.statusBadge} ${cls}`}>{status}</span>
-  }
-
-  if (!authed) {
-    return (
-      <div className={s.page}>
-        <div className={s.container}>
-          <div className={s.loginBox}>
-            <h2>审核员登录</h2>
-            <input className={s.input} type="email" placeholder="审核员邮箱" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <input className={s.input} type="password" placeholder="密码" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button className={`${s.btn} ${s.btnPrimary}`} style={{ width: '100%' }} onClick={signIn}>进入系统</button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   if (editing) {
@@ -160,7 +128,7 @@ export default function AdminPage() {
 
           <div className={s.gridRow}>
             <div>
-              <label className={s.label}>标签（如：散文、论文、随笔）</label>
+              <label className={s.label}>标签</label>
               <input className={s.input} value={editFields.tags} onChange={(e) => setEditFields({ ...editFields, tags: e.target.value })} placeholder="散文" />
             </div>
             <div>
@@ -173,7 +141,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <label className={s.label}>摘要（显示在文库卡片上）</label>
+          <label className={s.label}>摘要</label>
           <textarea className={s.input} rows={2} value={editFields.excerpt} onChange={(e) => setEditFields({ ...editFields, excerpt: e.target.value })} style={{ fontFamily: "'Segoe UI',sans-serif" }} />
 
           <label className={s.label}>原稿文件</label>
@@ -235,7 +203,7 @@ export default function AdminPage() {
                   <div className={s.articleInfo}>
                     <h4>{item.title} {statusBadge(item.status)}</h4>
                     <p>
-                      作者: {item.author} | {item.type === 'paper' ? '📄 论文' : '📝 非论文'} | 时间: {new Date(item.created_at).toLocaleString()}
+                      作者: {item.author} | {item.type === 'paper' ? '论文' : '非论文'} | 时间: {new Date(item.created_at).toLocaleString()}
                       {reviews.length > 0 && (
                         <span style={{ fontSize: '0.8rem', color: '#666' }}>
                           {' '}| 投票: <span style={{ color: '#27ae60' }}>{approveCount} 赞成</span> / <span style={{ color: '#e74c3c' }}>{rejectCount} 反对</span>

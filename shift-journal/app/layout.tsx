@@ -18,8 +18,8 @@ const playfairDisplay = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: 'Shift 刊见 — She Holds In Fist the Truth.',
-  description: '开源期刊 · 女性主义知识共同体 · 由女性书写，为未来署名',
+  title: 'Shift 刊见 — Sheer Honesty In Form and Thought',
+  description: '新叙事 · 开源刊见 · 知识与表达共同体 · 在这里，观点不必服从旧秩序',
 }
 
 export default function RootLayout({
