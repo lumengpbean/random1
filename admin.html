@@ -38,6 +38,7 @@
         .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
         .status-pending { background: #fff3cd; color: #856404; }
         .status-rejected { background: #fce4ec; color: #c62828; }
+        .status-approved { background: #e8f5e9; color: #2e7d32; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,8 +60,11 @@
     <!-- Article List -->
     <div id="admin-ui" class="hidden">
         <div style="display:flex; justify-content: space-between; align-items: center;">
-            <h2>待审核稿件池</h2>
-            <button onclick="signOut()" style="background:none; border:none; color:#666; cursor:pointer;">退出登录</button>
+            <h2 id="list-title">待审核稿件池</h2>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button class="btn" style="background:var(--accent); font-size:0.8rem; padding:6px 14px;" onclick="toggleShowAll()" id="toggle-btn">显示全部</button>
+                <button onclick="signOut()" style="background:none; border:none; color:#666; cursor:pointer;">退出登录</button>
+            </div>
         </div>
         <div id="article-list">正在同步云端数据...</div>
     </div>
@@ -125,6 +129,7 @@
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentArticleId = null;
+    let showAll = false;
 
     // Auth
     async function checkAuth() {
@@ -149,13 +154,18 @@
         location.reload();
     }
 
+    function toggleShowAll() {
+        showAll = !showAll;
+        document.getElementById('toggle-btn').textContent = showAll ? '仅待审核' : '显示全部';
+        document.getElementById('list-title').textContent = showAll ? '全部稿件' : '待审核稿件池';
+        fetchPending();
+    }
+
     // Fetch articles
     async function fetchPending() {
-        const { data, error } = await sb
-            .from('articles')
-            .select('*')
-            .neq('status', 'approved')
-            .order('created_at', { ascending: false });
+        var query = sb.from('articles').select('*');
+        if (!showAll) query = query.neq('status', 'approved');
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         const container = document.getElementById('article-list');
         if (error) {
