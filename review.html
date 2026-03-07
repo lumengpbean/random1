@@ -25,6 +25,7 @@
         textarea { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; resize: vertical; }
         .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
         .status-pending { background: #fff3cd; color: #856404; }
+        .status-reviewed { background: #e3f2fd; color: #1565c0; }
         .status-approved { background: #e8f5e9; color: #2e7d32; }
         .vote-info { margin-top: 8px; font-size: 0.85rem; }
         .vote-bar { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
@@ -67,7 +68,7 @@
             </div>
         </div>
         <div class="threshold-info">
-            投票规则：需要 <strong id="threshold-display"></strong> 票赞成即可发布。每人仅可投票一次。
+            投票规则：需要 <strong id="threshold-display"></strong> 票赞成，通过后由编辑排版发布。每人仅可投票一次。
         </div>
         <div id="article-list">正在加载稿件...</div>
     </div>
@@ -110,11 +111,11 @@
         location.reload();
     }
 
-    // Load pending articles + their votes
+    // Load pending + reviewed articles + their votes
     async function loadArticles() {
         const { data: articles, error } = await sb.from('articles')
             .select('*')
-            .eq('status', 'pending')
+            .in('status', ['pending', 'reviewed'])
             .order('created_at', { ascending: false });
 
         const container = document.getElementById('article-list');
@@ -166,7 +167,9 @@
 
             // Vote buttons or voted badge
             var actionHtml = '';
-            if (myVote) {
+            if (item.status === 'reviewed') {
+                actionHtml = '<span class="voted-badge" style="background:#e3f2fd; color:#1565c0;">已通过审核，待编辑发布</span>';
+            } else if (myVote) {
                 var myVoteLabel = myVote.vote === 'approve' ? '已投：赞成' : '已投：反对';
                 actionHtml = '<span class="voted-badge">' + myVoteLabel + '</span>';
             } else {
@@ -182,11 +185,14 @@
                     '</div>';
             }
 
+            var statusLabel = item.status === 'reviewed' ? '已通过' : '待审核';
+            var statusClass = item.status === 'reviewed' ? 'status-reviewed' : 'status-pending';
+
             return '<div class="article-item">' +
                 '<div class="article-item-top">' +
                     '<div class="article-info">' +
                         '<h4>' + escapeHtml(item.title) +
-                            ' <span class="status-badge status-pending">待审核</span>' +
+                            ' <span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
                         '</h4>' +
                         '<p>作者: ' + escapeHtml(item.author) + ' | ' +
                             (item.type === 'paper' ? '论文' : '非论文') + ' | ' +
@@ -227,7 +233,7 @@
             return;
         }
 
-        // Check if threshold reached → auto-publish
+        // Check if threshold reached → mark as reviewed (editor will format & publish)
         if (vote === 'approve') {
             const { data: reviews } = await sb.from('reviews')
                 .select('*')
@@ -235,11 +241,11 @@
                 .eq('vote', 'approve');
 
             if (reviews && reviews.length >= REQUIRED_APPROVALS) {
-                await sb.from('articles').update({ status: 'approved' }).eq('id', articleId);
-                alert('投票成功！该稿件已达到 ' + REQUIRED_APPROVALS + ' 票赞成，自动发布。');
+                await sb.from('articles').update({ status: 'reviewed' }).eq('id', articleId);
+                alert('投票成功！该稿件已达到 ' + REQUIRED_APPROVALS + ' 票赞成，已转交编辑排版发布。');
             } else {
                 var remaining = REQUIRED_APPROVALS - (reviews ? reviews.length : 0);
-                alert('投票成功！还需 ' + remaining + ' 票赞成即可发布。');
+                alert('投票成功！还需 ' + remaining + ' 票赞成。');
             }
         } else {
             alert('投票成功（反对）。');
