@@ -331,7 +331,7 @@ Wang, L. (2021). 论文标题.</pre>
                             (item.type === 'paper' ? '论文' : '非论文') + ' | ' +
                             new Date(item.created_at).toLocaleDateString() + '</p>' +
                         (item.excerpt ? '<p style="margin-top:6px; color:#444;">' + escapeHtml(item.excerpt) + '</p>' : '') +
-                        (item.file_url ? '<a href="' + escapeHtml(item.file_url) + '" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">查看原稿文件</a>' : '') +
+                        (item.file_url ? '<a href="' + escapeHtml(extractUrl(item.file_url)) + '" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">查看原稿文件</a>' : '') +
                         '<div class="vote-info">' +
                             '<div class="vote-bar">' + dots + '</div>' +
                             '<span style="color:var(--success);">赞成 ' + approveCount + '</span> / ' +
@@ -404,7 +404,7 @@ Wang, L. (2021). 论文标题.</pre>
 
         if (data.file_url) {
             document.getElementById('edit-file-link').innerHTML =
-                '<a href="' + escapeHtml(data.file_url) + '" target="_blank" style="color:#3498db;">查看原稿文件</a>';
+                '<a href="' + escapeHtml(extractUrl(data.file_url)) + '" target="_blank" style="color:#3498db;">查看原稿文件</a>';
         } else {
             document.getElementById('edit-file-link').innerHTML = '<span style="color:#999;">无文件链接</span>';
         }
@@ -504,6 +504,12 @@ Wang, L. (2021). 论文标题.</pre>
 
         if (error) { alert('保存失败: ' + error.message); return; }
         alert('已保存，稿件仍为"已通过"状态，尚未发布。');
+    }
+
+    function extractUrl(str) {
+        if (!str) return '';
+        var match = str.match(/https?:\/\/[^\s，。）)]+/);
+        return match ? match[0] : str;
     }
 
     function escapeHtml(str) {

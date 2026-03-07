@@ -261,7 +261,7 @@ Wang, L. (2021). 论文标题.</pre>
                             <span class="status-badge status-${item.status}">${item.status}</span>
                         </h4>
                         <p>作者: ${escapeHtml(item.author)} | ${item.type === 'paper' ? '📄 论文' : '📝 非论文'} | 时间: ${new Date(item.created_at).toLocaleString()}${voteHtml}</p>
-                        ${item.file_url ? `<a href="${escapeHtml(item.file_url)}" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">📂 查看原稿文件</a>` : ''}
+                        ${item.file_url ? `<a href="${escapeHtml(extractUrl(item.file_url))}" target="_blank" style="color:#3498db; text-decoration:none; font-size:0.9rem;">📂 查看原稿文件</a>` : ''}
                     </div>
                     <div class="btn-group">
                         <button class="btn btn-edit" onclick="openEditor('${item.id}')">编辑发布</button>
@@ -289,7 +289,7 @@ Wang, L. (2021). 论文标题.</pre>
 
         if (data.file_url) {
             document.getElementById('edit-file-link').innerHTML =
-                `<a href="${escapeHtml(data.file_url)}" target="_blank" style="color:#3498db;">📂 ${escapeHtml(data.file_url)}</a>`;
+                `<a href="${escapeHtml(extractUrl(data.file_url))}" target="_blank" style="color:#3498db;">📂 查看原稿文件</a>`;
         } else {
             document.getElementById('edit-file-link').innerHTML = '<span style="color:#999;">无文件链接</span>';
         }
@@ -351,6 +351,12 @@ Wang, L. (2021). 论文标题.</pre>
         text = escapeHtml(text);
         text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         return text;
+    }
+
+    function extractUrl(str) {
+        if (!str) return '';
+        var match = str.match(/https?:\/\/[^\s，。）)]+/);
+        return match ? match[0] : str;
     }
 
     function escapeHtml(str) {

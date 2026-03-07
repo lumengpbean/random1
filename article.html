@@ -178,8 +178,9 @@
 
         // PDF embed
         if (data.file_url) {
-          document.getElementById('pdf-viewer').src = data.file_url;
-          document.getElementById('pdf-download').href = data.file_url;
+          var cleanUrl = extractUrl(data.file_url);
+          document.getElementById('pdf-viewer').src = cleanUrl;
+          document.getElementById('pdf-download').href = cleanUrl;
           document.getElementById('pdf-section').style.display = 'block';
           document.getElementById('article-end').style.display = 'none';
         }
@@ -201,6 +202,12 @@
     function showError() {
       document.getElementById('article-loading').style.display = 'none';
       document.getElementById('article-error').style.display = 'block';
+    }
+
+    function extractUrl(str) {
+      if (!str) return '';
+      var match = str.match(/https?:\/\/[^\s，。）)]+/);
+      return match ? match[0] : str;
     }
 
     function escapeHtml(str) {
