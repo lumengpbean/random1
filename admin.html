@@ -104,7 +104,69 @@
         <div id="edit-file-link" style="margin:6px 0;"></div>
 
         <label>正文内容</label>
-        <p class="format-hint">直接粘贴文字，空行分段。# 开头 = 小标题，> 开头 = 引用，--- = 分割线，**文字** = 加粗</p>
+        <details style="margin:8px 0; font-size:0.85rem; color:#666;">
+            <summary style="cursor:pointer; color:var(--accent); font-weight:600;">排版指南（点击展开）</summary>
+            <div style="background:#f9f9f9; padding:12px 16px; border-radius:6px; margin-top:6px; line-height:1.8;">
+                <p><strong>基本格式：</strong></p>
+                <p>直接粘贴文字，空一行 = 新段落</p>
+                <p><code># 标题文字</code> → 小标题（如：引言、研究方法）</p>
+                <p><code>> 引用文字</code> → 引用块（如：摘要、名人名言）</p>
+                <p><code>---</code> → 分割线</p>
+                <p><code>**加粗文字**</code> → <strong>加粗</strong></p>
+                <br>
+                <p><strong>论文推荐格式：</strong></p>
+                <pre style="background:#f0f0f0; padding:10px; border-radius:4px; font-size:0.8rem; white-space:pre-wrap; font-family:monospace;">
+> 摘要：在此粘贴摘要内容...
+
+> 关键词：女性主义、知识生产、学术写作
+
+# 引言
+
+正文段落...
+
+# 文献综述
+
+正文段落... **Smith (2020)** 指出...
+
+# 研究方法
+
+正文段落...
+
+# 研究结果
+
+正文段落...
+
+# 讨论
+
+正文段落...
+
+# 总结
+
+正文段落...
+
+---
+
+参考文献：
+Smith, J. (2020). Title of Paper.
+Wang, L. (2021). 论文标题.</pre>
+                <br>
+                <p><strong>散文/随笔格式：</strong></p>
+                <pre style="background:#f0f0f0; padding:10px; border-radius:4px; font-size:0.8rem; white-space:pre-wrap; font-family:monospace;">
+> "开头引用一句话。"
+
+第一段正文...
+
+第二段正文...
+
+# 小标题（如果有）
+
+更多段落...
+
+---
+
+—— 完 ——</pre>
+            </div>
+        </details>
 
         <div class="tab-bar">
             <div class="tab active" onclick="switchTab('write')">编辑</div>
