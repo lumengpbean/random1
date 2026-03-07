@@ -17,7 +17,7 @@
     <div class="header-inner">
       <div class="header-left">
         <a href="index.html" class="back-home">&larr; 返回首页</a>
-        <h1 class="header-title" style="font-size:1.6rem;">Shift <span class="icon-shift">&#8629;</span> 期刊</h1>
+        <h1 class="header-title" style="font-size:1.6rem;">Shift <span class="icon-shift">&#8629;</span> 刊见</h1>
       </div>
       <div class="header-right">
         <p class="header-issn">&#9679; SHIFT 3008 · 2026 创刊号</p>
@@ -43,63 +43,7 @@
     </div>
 
     <div class="cards" id="articleCards">
-
-      <!-- Card 1 -->
-      <a href="articles/non-sanwen/article1.html" class="card-link" data-search="没有继承权的宠物 真假千金 网络文学 性别研究 在晋江游泳的洋世子 终点文学城 潇湘 情感劳动 继承权">
-      <article class="card">
-        <div class="card-tags">
-          <span class="tag tag-red">网络文学 · 性别研究</span>
-        </div>
-        <h3 class="card-title">没有继承权的"宠物"：早期"真假千金"文学中假千金的生存逻辑与主体性消隐</h3>
-        <p class="card-author">&#9998; 在晋江游泳的洋世子, 终点文学城, 潇湘</p>
-        <p class="card-excerpt">
-          假千金的本质是"没有继承权的'宠物'"——她虽被纳入豪门家庭，却被结构性排除在财产继承与血脉延续之外，其价值完全维系于对家庭成员的"情感供给"。
-        </p>
-      </article>
-      </a>
-
-      <!-- Card 2 -->
-      <a href="articles/sanwen/articel2.html" class="card-link" data-search="相亲对象 母虾 散文 苍蝇腿女王 剥虾 小周">
-      <article class="card">
-        <div class="card-tags">
-          <span class="tag tag-brown">散文</span>
-        </div>
-        <h3 class="card-title">相亲对象说："母虾剪掉一只眼更利于繁殖"</h3>
-        <p class="card-author">&#9998; 苍蝇腿女王</p>
-        <p class="card-excerpt">
-          说这话的是我的相亲对象小周。他正替我剥掉熟虾的壳——鲜红的甲壳经他手变得残破不堪，七零八落，碎得像大块皮屑，簌簌从他手里下落。
-        </p>
-      </article>
-      </a>
-
-      <!-- Card 3 -->
-      <a href="articles/non-sanwen/articel3.html" class="card-link" data-search="同人 战场 一次元社交 攻击力 互联网文化 嗷嗷嗷 领地意识 补偿机制">
-      <article class="card">
-        <div class="card-tags">
-          <span class="tag tag-rose">同人研究 · 互联网文化</span>
-        </div>
-        <h3 class="card-title">同人的战场：一次元社交领地及攻击力提升指南</h3>
-        <p class="card-author">&#9998; 嗷嗷嗷</p>
-        <p class="card-excerpt">
-          同人文本在当代青年生活中扮演着复杂而重要的角色。本文探讨阅读同人文本如何缓解精神压力、提升"攻击力"，以及一次元社交如何促进同人体系发展与异化。
-        </p>
-      </article>
-      </a>
-
-      <!-- Card 4 -->
-      <a href="articles/non-sanwen/article4.html" class="card-link" data-search="灭绝师太 性别政治 文学批评 峨眉派 云吃吃 倚天屠龙记 金庸 张无忌 叙事压制 女性权力 父权叙事">
-      <article class="card">
-        <div class="card-tags">
-          <span class="tag tag-red">性别政治 · 文学批评</span>
-        </div>
-        <h3 class="card-title">关于灭绝师太因为不让女弟子谈恋爱而被骂了三十年的性别政治学反思</h3>
-        <p class="card-author">&#9998; 峨眉派弟子云吃吃</p>
-        <p class="card-excerpt">
-          灭绝师太形象的长期污名化，根本上是一个"叙事政治"问题。金庸小说中以张无忌为中心的救赎叙事，系统性地压制和妖魔化了女性权力的独立表达。
-        </p>
-      </article>
-      </a>
-
+      <!-- Cards auto-generated from articles.json -->
     </div>
 
     <p id="noResults" style="display:none; text-align:center; color:var(--color-text-light); margin-top:2rem;">
@@ -109,34 +53,50 @@
 
   <!-- Footer -->
   <footer class="site-footer">
-    <p>Shift 期刊 &copy; 2026 — She Holds In Fist the Truth.</p>
+    <p>Shift 刊见 &copy; 2026 — She Holds In Fist the Truth.</p>
     <p>由女性书写，为未来署名。开源期刊 · 女性主义知识共同体</p>
   </footer>
 
   <script>
-    document.getElementById('searchInput').addEventListener('input', function() {
-      const query = this.value.toLowerCase();
-      const cards = document.querySelectorAll('#articleCards .card-link');
-      let visibleCount = 0;
+    // Load articles from JSON and render cards
+    fetch('articles.json')
+      .then(function(res) { return res.json(); })
+      .then(function(articles) {
+        var container = document.getElementById('articleCards');
+        articles.forEach(function(a) {
+          var card = document.createElement('a');
+          card.href = a.url;
+          card.className = 'card-link';
+          card.setAttribute('data-search', a.title + ' ' + a.author + ' ' + a.tags + ' ' + a.excerpt + ' ' + a.searchKeywords);
+          card.innerHTML =
+            '<article class="card">' +
+              '<div class="card-tags">' +
+                '<span class="tag tag-' + a.tagColor + '">' + a.tags + '</span>' +
+              '</div>' +
+              '<h3 class="card-title">' + a.title + '</h3>' +
+              '<p class="card-author">&#9998; ' + a.author + '</p>' +
+              '<p class="card-excerpt">' + a.excerpt + '</p>' +
+            '</article>';
+          container.appendChild(card);
+        });
 
-      cards.forEach(function(card) {
-        const title = card.querySelector('.card-title').textContent.toLowerCase();
-        const author = card.querySelector('.card-author').textContent.toLowerCase();
-        const excerpt = card.querySelector('.card-excerpt').textContent.toLowerCase();
-        const tags = card.querySelector('.tag').textContent.toLowerCase();
-        const searchData = (card.getAttribute('data-search') || '').toLowerCase();
-        const text = title + ' ' + author + ' ' + excerpt + ' ' + tags + ' ' + searchData;
-
-        if (text.includes(query)) {
-          card.style.display = '';
-          visibleCount++;
-        } else {
-          card.style.display = 'none';
-        }
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function() {
+          var query = this.value.toLowerCase();
+          var cards = document.querySelectorAll('#articleCards .card-link');
+          var visibleCount = 0;
+          cards.forEach(function(card) {
+            var text = card.getAttribute('data-search').toLowerCase();
+            if (text.includes(query)) {
+              card.style.display = '';
+              visibleCount++;
+            } else {
+              card.style.display = 'none';
+            }
+          });
+          document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+        });
       });
-
-      document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
-    });
   </script>
 
 </body>
