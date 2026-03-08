@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
   })
 
   if (error) {
-    if (error.message.includes('unique') || error.message.includes('duplicate')) {
+    console.error('Vote insert error:', error.code, error.message)
+    if (error.code === '23505' || error.message.includes('unique') || error.message.includes('duplicate')) {
       return NextResponse.json({ error: 'already_voted' }, { status: 409 })
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -52,14 +53,17 @@ export async function POST(req: NextRequest) {
 
   // Check if threshold reached
   if (vote === 'approve') {
-    const { data: reviews } = await admin
+    const { data: reviews, error: countError } = await admin
       .from('reviews')
       .select('*')
       .eq('article_id', articleId)
       .eq('vote', 'approve')
 
+    console.log('Approve count for', articleId, ':', reviews?.length, 'needed:', REQUIRED_APPROVALS, 'error:', countError?.message)
+
     if (reviews && reviews.length >= REQUIRED_APPROVALS) {
-      await admin.from('articles').update({ status: 'reviewed' }).eq('id', articleId)
+      const { error: updateError } = await admin.from('articles').update({ status: 'reviewed' }).eq('id', articleId).neq('status', 'approved')
+      if (updateError) console.error('Failed to update article status:', updateError.message)
       return NextResponse.json({ success: true, threshold_reached: true, count: reviews.length })
     }
     return NextResponse.json({ success: true, threshold_reached: false, count: reviews?.length || 0 })
