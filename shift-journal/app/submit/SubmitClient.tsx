@@ -12,11 +12,13 @@ export default function SubmitClient() {
   const [formType, setFormType] = useState<'paper' | 'essay'>('paper')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [essayFile, setEssayFile] = useState<File | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const [honeypot, setHoneypot] = useState('')
   const [pageLoadTime] = useState(Date.now())
   const [turnstileToken, setTurnstileToken] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const essayFileRef = useRef<HTMLInputElement>(null)
   const handleTurnstileToken = useCallback((token: string) => setTurnstileToken(token), [])
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -33,6 +35,28 @@ export default function SubmitClient() {
       return
     }
     setSelectedFile(file)
+  }
+
+  const ALLOWED_ESSAY_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ]
+
+  function handleEssayFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!ALLOWED_ESSAY_TYPES.includes(file.type)) {
+      alert('仅支持 PDF、DOC、DOCX 格式文件')
+      e.target.value = ''
+      return
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      alert('文件大小不能超过 50MB')
+      e.target.value = ''
+      return
+    }
+    setEssayFile(file)
   }
 
   async function handlePaperSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -100,31 +124,33 @@ export default function SubmitClient() {
     e.preventDefault()
     setMessage(null)
 
+    if (!essayFile) {
+      alert('请上传稿件文件（PDF/DOC/DOCX）')
+      return
+    }
+
     const form = e.currentTarget
     const title = (form.elements.namedItem('essay-title') as HTMLInputElement).value
     const author = (form.elements.namedItem('essay-author') as HTMLInputElement).value
     const abstract = (form.elements.namedItem('essay-abstract') as HTMLTextAreaElement).value
-    const fileUrl = (form.elements.namedItem('essay-fileUrl') as HTMLInputElement).value
-    const passcode = (form.elements.namedItem('essay-passcode') as HTMLInputElement).value
 
-    // Validate file URL format
-    if (fileUrl) {
-      const allowed = /\.(pdf|doc|docx)(\?|$)/i.test(fileUrl) ||
-        /drive\.google\.com/i.test(fileUrl) ||
-        /pan\.baidu\.com/i.test(fileUrl) ||
-        /docs\.google\.com/i.test(fileUrl) ||
-        /dropbox\.com/i.test(fileUrl) ||
-        /onedrive\.live\.com/i.test(fileUrl)
-      if (!allowed) {
-        setMessage({ type: 'error', text: '仅支持 PDF/DOC/DOCX 文件链接，或 Google Drive / 百度网盘 / Dropbox / OneDrive 分享链接。' })
-        return
-      }
+    setProgress(30)
+
+    // Upload file to Supabase Storage
+    const supabase = createClient()
+    const fileName = `${Date.now()}_${essayFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const { error: uploadError } = await supabase.storage
+      .from('papers')
+      .upload(fileName, essayFile)
+
+    if (uploadError) {
+      setProgress(null)
+      setMessage({ type: 'error', text: '上传失败: ' + uploadError.message })
+      return
     }
 
-    let fullFileUrl = fileUrl || null
-    if (fileUrl && passcode) {
-      fullFileUrl = `${fileUrl} （提取码: ${passcode}）`
-    }
+    setProgress(70)
+    const { data: urlData } = supabase.storage.from('papers').getPublicUrl(fileName)
 
     const res = await fetch('/api/submit', {
       method: 'POST',
@@ -133,7 +159,7 @@ export default function SubmitClient() {
         title,
         author,
         excerpt: abstract || null,
-        file_url: fullFileUrl,
+        file_url: urlData.publicUrl,
         type: 'essay',
         honeypot,
         timestamp: pageLoadTime,
@@ -141,12 +167,14 @@ export default function SubmitClient() {
       }),
     })
 
+    setProgress(null)
     const data = await res.json()
     if (!res.ok) {
       setMessage({ type: 'error', text: data.error || '提交失败' })
     } else {
       setMessage({ type: 'success', text: '投稿成功！我们会尽快审核。' })
       form.reset()
+      setEssayFile(null)
     }
   }
 
@@ -253,14 +281,21 @@ export default function SubmitClient() {
                 <label className={s.formLabel}>摘要（简短描述）</label>
                 <textarea name="essay-abstract" className={s.textarea} rows={3} />
               </div>
-              <div className={s.formGroup}>
-                <label className={s.formLabel}>文件链接（选填，仅支持 PDF/DOC/DOCX）<span style={{ color: '#c62828', fontWeight: 'normal', fontSize: '0.85rem' }}>（请提供 Google Drive / 百度网盘 / Dropbox 非加密链接！）</span></label>
-                <input name="essay-fileUrl" className={s.input} placeholder="粘贴你的文件分享链接" />
+              <h4>（三）上传稿件文件 *</h4>
+              <div
+                className={`${s.uploadArea} ${essayFile ? s.uploadAreaHasFile : ''}`}
+                onClick={() => essayFileRef.current?.click()}
+              >
+                <p style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>&#128196;</p>
+                <p>点击上传文件</p>
+                <p className={s.uploadHint}>支持 PDF、DOC、DOCX 格式，最大 50MB</p>
+                {essayFile && (
+                  <p className={s.fileName}>
+                    {essayFile.name} ({(essayFile.size / 1024 / 1024).toFixed(1)}MB)
+                  </p>
+                )}
               </div>
-              <div className={s.formGroup}>
-                <label className={s.formLabel}>提取码 / 密码（选填）</label>
-                <input name="essay-passcode" className={s.input} placeholder="如有提取码请填写" />
-              </div>
+              <input ref={essayFileRef} type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={handleEssayFileSelect} />
               <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交稿件</button>
             </form>
