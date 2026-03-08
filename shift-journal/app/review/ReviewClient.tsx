@@ -153,13 +153,21 @@ export default function ReviewPage() {
           </div>
 
           <label className={s.label}>正文内容</label>
+          <div style={{ background: '#f9f6f1', border: '1px solid var(--color-border)', borderRadius: 6, padding: '10px 14px', marginBottom: 8, fontSize: '0.85rem', color: '#555' }}>
+            <strong>排版格式说明：</strong><br />
+            <code># 标题</code> → 大标题&nbsp;&nbsp;|&nbsp;&nbsp;
+            <code>**粗体**</code> → <strong>粗体</strong>&nbsp;&nbsp;|&nbsp;&nbsp;
+            <code>&gt; 引用</code> → 引用块&nbsp;&nbsp;|&nbsp;&nbsp;
+            <code>---</code> → 分割线&nbsp;&nbsp;|&nbsp;&nbsp;
+            空行分段
+          </div>
           <div className={s.tabBar}>
             <div className={`${s.tab} ${!previewMode ? s.tabActive : ''}`} onClick={() => setPreviewMode(false)}>编辑</div>
             <div className={`${s.tab} ${previewMode ? s.tabActive : ''}`} onClick={() => setPreviewMode(true)}>预览</div>
           </div>
 
           {!previewMode ? (
-            <textarea className={s.textarea} rows={20} value={editFields.content} onChange={(e) => setEditFields({ ...editFields, content: e.target.value })} />
+            <textarea className={s.textarea} rows={20} value={editFields.content} onChange={(e) => setEditFields({ ...editFields, content: e.target.value })} placeholder={"# 第一部分标题\n\n正文内容...\n\n**重点内容**会加粗显示\n\n> 这是一段引用\n\n---\n\n# 第二部分标题\n\n更多正文..."} />
           ) : (
             <div className={s.editorPreview} dangerouslySetInnerHTML={{ __html: textToHtml(editFields.content) }} />
           )}
