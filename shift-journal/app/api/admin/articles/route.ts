@@ -65,6 +65,7 @@ export async function PUT(req: NextRequest) {
       ...fields,
       content: fields.content,
       status: 'approved',
+      published_at: new Date().toISOString(),
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })

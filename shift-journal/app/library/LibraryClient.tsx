@@ -25,7 +25,7 @@ export default function LibraryPage() {
     const supabase = createClient()
     supabase
       .from('articles')
-      .select('id, title, author, tags, tag_color, excerpt, type, like_count, created_at')
+      .select('id, title, author, tags, tag_color, excerpt, type, like_count, created_at, published_at')
       .eq('status', 'approved')
       .then(({ data }) => {
         if (data) setArticles(data as Article[])
@@ -39,8 +39,8 @@ export default function LibraryPage() {
   })
 
   const sorted = [...filtered].sort((a, b) => {
-    if (sort === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    if (sort === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    if (sort === 'newest') return new Date(b.published_at ?? b.created_at).getTime() - new Date(a.published_at ?? a.created_at).getTime()
+    if (sort === 'oldest') return new Date(a.published_at ?? a.created_at).getTime() - new Date(b.published_at ?? b.created_at).getTime()
     return (b.like_count ?? 0) - (a.like_count ?? 0)
   })
 
