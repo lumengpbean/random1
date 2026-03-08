@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const busboy = Busboy({ headers: { 'content-type': contentType } })
 
   const fields: Record<string, string> = {}
-  let fileBuffer: Buffer | null = null
+  let fileBuffer: Buffer<ArrayBuffer> | null = null
   let fileName = ''
   let fileMimeType = ''
 
@@ -118,10 +118,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '文件不能为空' }, { status: 400 })
   }
 
-  let finalFileBuffer = fileBuffer
+  let finalFileBuffer: Buffer = fileBuffer as Buffer
   if (fileMimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
     try {
-      const pdfDoc = await PDFDocument.load(fileBuffer)
+      const pdfDoc = await PDFDocument.load(finalFileBuffer)
       pdfDoc.setTitle('')
       pdfDoc.setAuthor('')
       pdfDoc.setSubject('')
