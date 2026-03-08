@@ -9,6 +9,13 @@ import Footer from '@/components/Footer'
 import s from '@/styles/ArticleCard.module.css'
 
 type SortKey = 'newest' | 'oldest' | 'popular'
+type FilterKey = 'all' | 'paper' | 'non-paper'
+
+const FILTER_LABELS: Record<FilterKey, string> = {
+  all: '全部',
+  paper: '论文',
+  'non-paper': '非论文',
+}
 
 const SORT_LABELS: Record<SortKey, string> = {
   newest: '最新',
@@ -20,6 +27,7 @@ export default function LibraryPage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortKey>('newest')
+  const [filter, setFilter] = useState<FilterKey>('all')
 
   useEffect(() => {
     const supabase = createClient()
@@ -33,9 +41,11 @@ export default function LibraryPage() {
   }, [])
 
   const filtered = articles.filter((a) => {
-    if (!query) return true
-    const text = `${a.title} ${a.author} ${a.tags || ''} ${a.excerpt || ''}`.toLowerCase()
-    return text.includes(query.toLowerCase())
+    const matchSearch = !query ||
+      `${a.title} ${a.author} ${a.tags || ''} ${a.excerpt || ''}`.toLowerCase().includes(query.toLowerCase())
+    const matchFilter = filter === 'all' ||
+      (filter === 'paper' ? a.type === 'paper' : a.type !== 'paper')
+    return matchSearch && matchFilter
   })
 
   const sorted = [...filtered].sort((a, b) => {
@@ -70,6 +80,17 @@ export default function LibraryPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+        </div>
+        <div className={s.filterBar}>
+          {(Object.keys(FILTER_LABELS) as FilterKey[]).map((key) => (
+            <button
+              key={key}
+              className={`${s.filterBtn} ${filter === key ? s.filterBtnActive : ''}`}
+              onClick={() => setFilter(key)}
+            >
+              {FILTER_LABELS[key]}
+            </button>
+          ))}
         </div>
         <div className={s.cards}>
           {sorted.map((article) => (
