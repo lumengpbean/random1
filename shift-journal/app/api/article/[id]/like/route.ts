@@ -13,18 +13,22 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const ipHash = getIpHash(req)
-  const supabase = createAdminClient()
+  try {
+    const { id } = await params
+    const ipHash = getIpHash(req)
+    const supabase = createAdminClient()
 
-  const { data } = await supabase
-    .from('article_likes')
-    .select('id')
-    .eq('article_id', id)
-    .eq('ip_hash', ipHash)
-    .single()
+    const { data } = await supabase
+      .from('article_likes')
+      .select('id')
+      .eq('article_id', id)
+      .eq('ip_hash', ipHash)
+      .single()
 
-  return NextResponse.json({ liked: !!data })
+    return NextResponse.json({ liked: !!data })
+  } catch {
+    return NextResponse.json({ liked: false }, { status: 500 })
+  }
 }
 
 // POST: toggle like

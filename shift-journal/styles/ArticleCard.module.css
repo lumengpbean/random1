@@ -162,8 +162,40 @@
   color: white;
 }
 
+.filterBar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filterBtn {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-light);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filterBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.filterBtnActive {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.filterBtnActive:hover {
+  color: white;
+}
+
 .searchBar {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .searchInput {

@@ -27,8 +27,9 @@ export default function ArticleContent({ article }: { article: Article }) {
 
     // Check if already liked
     fetch(`/api/article/${article.id}/like`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(d => setLiked(d.liked))
+      .catch(() => {})
   }, [article.id])
 
   async function toggleLike() {
