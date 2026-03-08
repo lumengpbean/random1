@@ -1,7 +1,8 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Turnstile from '@/components/Turnstile'
 import s from '@/styles/Admin.module.css'
 
 function LoginForm() {
@@ -9,8 +10,10 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
+  const handleTurnstileToken = useCallback((token: string) => setTurnstileToken(token), [])
 
   async function handleLogin() {
     setError('')
@@ -20,7 +23,7 @@ function LoginForm() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, turnstileToken }),
       })
 
       const data = await res.json()
@@ -73,6 +76,7 @@ function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && !loading && handleLogin()}
       />
+      <Turnstile onToken={handleTurnstileToken} />
       <button
         className={`${s.btn} ${s.btnPrimary}`}
         style={{ width: '100%' }}

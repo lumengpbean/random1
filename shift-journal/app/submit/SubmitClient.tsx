@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import Turnstile from '@/components/Turnstile'
 import a from '@/styles/Article.module.css'
 import s from '@/styles/Submit.module.css'
 
@@ -14,7 +15,9 @@ export default function SubmitClient() {
   const [progress, setProgress] = useState<number | null>(null)
   const [honeypot, setHoneypot] = useState('')
   const [pageLoadTime] = useState(Date.now())
+  const [turnstileToken, setTurnstileToken] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const handleTurnstileToken = useCallback((token: string) => setTurnstileToken(token), [])
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -78,6 +81,7 @@ export default function SubmitClient() {
         type: 'paper',
         honeypot,
         timestamp: pageLoadTime,
+        turnstileToken,
       }),
     })
 
@@ -103,6 +107,20 @@ export default function SubmitClient() {
     const fileUrl = (form.elements.namedItem('essay-fileUrl') as HTMLInputElement).value
     const passcode = (form.elements.namedItem('essay-passcode') as HTMLInputElement).value
 
+    // Validate file URL format
+    if (fileUrl) {
+      const allowed = /\.(pdf|doc|docx)(\?|$)/i.test(fileUrl) ||
+        /drive\.google\.com/i.test(fileUrl) ||
+        /pan\.baidu\.com/i.test(fileUrl) ||
+        /docs\.google\.com/i.test(fileUrl) ||
+        /dropbox\.com/i.test(fileUrl) ||
+        /onedrive\.live\.com/i.test(fileUrl)
+      if (!allowed) {
+        setMessage({ type: 'error', text: '仅支持 PDF/DOC/DOCX 文件链接，或 Google Drive / 百度网盘 / Dropbox / OneDrive 分享链接。' })
+        return
+      }
+    }
+
     let fullFileUrl = fileUrl || null
     if (fileUrl && passcode) {
       fullFileUrl = `${fileUrl} （提取码: ${passcode}）`
@@ -119,6 +137,7 @@ export default function SubmitClient() {
         type: 'essay',
         honeypot,
         timestamp: pageLoadTime,
+        turnstileToken,
       }),
     })
 
@@ -213,6 +232,7 @@ export default function SubmitClient() {
                   <p className={s.progressText}>{progress < 50 ? '正在上传 PDF...' : '正在保存信息...'}</p>
                 </div>
               )}
+              <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交论文</button>
             </form>
           )}
@@ -234,13 +254,14 @@ export default function SubmitClient() {
                 <textarea name="essay-abstract" className={s.textarea} rows={3} />
               </div>
               <div className={s.formGroup}>
-                <label className={s.formLabel}>文件链接（Google Drive / 网盘链接，选填）</label>
+                <label className={s.formLabel}>文件链接（选填，仅支持 PDF/DOC/DOCX）<span style={{ color: '#c62828', fontWeight: 'normal', fontSize: '0.85rem' }}>（请提供 Google Drive / 百度网盘 / Dropbox 非加密链接！）</span></label>
                 <input name="essay-fileUrl" className={s.input} placeholder="粘贴你的文件分享链接" />
               </div>
               <div className={s.formGroup}>
                 <label className={s.formLabel}>提取码 / 密码（选填）</label>
                 <input name="essay-passcode" className={s.input} placeholder="如有提取码请填写" />
               </div>
+              <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交稿件</button>
             </form>
           )}

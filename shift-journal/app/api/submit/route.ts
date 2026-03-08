@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { verifyTurnstile } from '@/lib/turnstile'
 
 // Rate limiting: track submissions by IP
 const recentSubmissions = new Map<string, number[]>()
@@ -28,7 +29,18 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { title, author, excerpt, tags, file_url, type, honeypot, timestamp } = body
+  const { title, author, excerpt, tags, file_url, type, honeypot, timestamp, turnstileToken } = body
+
+  // Turnstile CAPTCHA verification
+  if (turnstileToken) {
+    const valid = await verifyTurnstile(turnstileToken)
+    if (!valid) {
+      return NextResponse.json({ error: '人机验证失败，请刷新页面重试。' }, { status: 400 })
+    }
+  } else if (process.env.TURNSTILE_SECRET_KEY) {
+    // If Turnstile is configured but no token provided, reject
+    return NextResponse.json({ error: '请完成人机验证。' }, { status: 400 })
+  }
 
   // Honeypot check — bots fill hidden fields
   if (honeypot) {
@@ -48,6 +60,21 @@ export async function POST(req: NextRequest) {
   // Sanitize: limit field lengths
   if (title.length > 500 || author.length > 200) {
     return NextResponse.json({ error: '输入内容过长。' }, { status: 400 })
+  }
+
+  // Validate file URL — only allow doc/pdf links or trusted cloud storage
+  if (file_url) {
+    const url = file_url.trim().split(/\s/)[0] // extract URL before passcode
+    const allowed = /\.(pdf|doc|docx)(\?|$)/i.test(url) ||
+      /drive\.google\.com/i.test(url) ||
+      /pan\.baidu\.com/i.test(url) ||
+      /docs\.google\.com/i.test(url) ||
+      /dropbox\.com/i.test(url) ||
+      /onedrive\.live\.com/i.test(url) ||
+      /supabase\.co\/storage/i.test(url) // our own storage
+    if (!allowed) {
+      return NextResponse.json({ error: '仅支持 PDF/DOC/DOCX 文件链接或云存储分享链接。' }, { status: 400 })
+    }
   }
 
   // Duplicate check

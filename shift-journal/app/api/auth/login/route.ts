@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { canAdmin, canReview } from '@/lib/supabase-admin'
+import { verifyTurnstile } from '@/lib/turnstile'
 
 // Rate limiting: track failed attempts by IP
 const failedAttempts = new Map<string, { count: number; lastAttempt: number; lockedUntil: number }>()
@@ -66,7 +67,17 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { email, password } = await req.json()
+  const { email, password, turnstileToken } = await req.json()
+
+  // Turnstile CAPTCHA verification
+  if (turnstileToken) {
+    const valid = await verifyTurnstile(turnstileToken)
+    if (!valid) {
+      return NextResponse.json({ error: '人机验证失败，请刷新页面重试。' }, { status: 400 })
+    }
+  } else if (process.env.TURNSTILE_SECRET_KEY) {
+    return NextResponse.json({ error: '请完成人机验证。' }, { status: 400 })
+  }
 
   if (!email || !password) {
     return NextResponse.json({ error: '请输入邮箱和密码。' }, { status: 400 })

@@ -44,7 +44,7 @@ export default function ArticleContent({ article }: { article: Article }) {
         />
       )}
 
-      {isPaper && fileUrl && (
+      {fileUrl && (isPaper || fileUrl.toLowerCase().endsWith('.pdf')) && (
         <div>
           <iframe className={s.pdfViewer} src={fileUrl} />
           <a className={s.pdfDownload} href={fileUrl} target="_blank" rel="noopener noreferrer">
@@ -53,7 +53,7 @@ export default function ArticleContent({ article }: { article: Article }) {
         </div>
       )}
 
-      {!isPaper && fileUrl && (
+      {fileUrl && !isPaper && !fileUrl.toLowerCase().endsWith('.pdf') && (
         <p style={{ marginTop: '1.5rem' }}>
           <a href={fileUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
             &#128194; 查看原稿文件
