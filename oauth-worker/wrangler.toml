@@ -1,5 +1,0 @@
-name = "shift-auth-worker"
-main = "src/index.js" # 如果你的代码入口在 index.js，请改为 "index.js"
-compatibility_date = "2026-03-06"
-
-[vars]
