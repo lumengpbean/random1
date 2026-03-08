@@ -7,7 +7,7 @@ import Footer from '@/components/Footer'
 import s from '@/styles/ArticleCard.module.css'
 import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60 // re-fetch from Supabase at most every 60 seconds
 
 export default async function HomePage() {
   const supabase = createStaticClient()
@@ -16,7 +16,7 @@ export default async function HomePage() {
   if (supabase) {
     const { data } = await supabase
       .from('articles')
-      .select('*')
+      .select('id, title, author, tags, tag_color, excerpt, type, created_at')
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(6)

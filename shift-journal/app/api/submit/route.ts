@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient()
   const { count } = await admin
     .from('articles')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('title', title.trim())
 
   if (count !== null && count >= 3) {

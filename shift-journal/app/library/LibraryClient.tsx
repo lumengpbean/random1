@@ -16,7 +16,7 @@ export default function LibraryPage() {
     const supabase = createClient()
     supabase
       .from('articles')
-      .select('*')
+      .select('id, title, author, tags, tag_color, excerpt, type, created_at')
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .then(({ data }) => {
