@@ -81,7 +81,7 @@ export default function SubmitClient() {
     const fileName = `${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
     const { error: uploadError } = await supabase.storage
       .from('papers')
-      .upload(fileName, selectedFile)
+      .upload(fileName, selectedFile, { cacheControl: '31536000' })
 
     if (uploadError) {
       setProgress(null)
@@ -141,7 +141,7 @@ export default function SubmitClient() {
     const fileName = `${Date.now()}_${essayFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
     const { error: uploadError } = await supabase.storage
       .from('papers')
-      .upload(fileName, essayFile)
+      .upload(fileName, essayFile, { cacheControl: '31536000' })
 
     if (uploadError) {
       setProgress(null)
