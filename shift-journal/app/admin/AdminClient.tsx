@@ -145,7 +145,14 @@ export default function AdminPage() {
           <label className={s.label}>原稿文件</label>
           <div style={{ margin: '6px 0' }}>
             {fileUrl ? (
-              <a className={s.fileLink} href={fileUrl} target="_blank" rel="noopener noreferrer">&#128194; 查看原稿文件</a>
+              <>
+                <a className={s.fileLink} href={fileUrl} target="_blank" rel="noopener noreferrer">&#128194; 查看原稿文件</a>
+                {editing.file_url && editing.file_url.includes('提取码') && (
+                  <span style={{ marginLeft: 10, color: '#666', fontSize: '0.9rem' }}>
+                    {editing.file_url.match(/（提取码.*?）/)?.[0]}
+                  </span>
+                )}
+              </>
             ) : (
               <span style={{ color: '#999' }}>无文件链接</span>
             )}

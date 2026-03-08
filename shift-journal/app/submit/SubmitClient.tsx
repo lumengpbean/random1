@@ -101,6 +101,12 @@ export default function SubmitClient() {
     const author = (form.elements.namedItem('essay-author') as HTMLInputElement).value
     const abstract = (form.elements.namedItem('essay-abstract') as HTMLTextAreaElement).value
     const fileUrl = (form.elements.namedItem('essay-fileUrl') as HTMLInputElement).value
+    const passcode = (form.elements.namedItem('essay-passcode') as HTMLInputElement).value
+
+    let fullFileUrl = fileUrl || null
+    if (fileUrl && passcode) {
+      fullFileUrl = `${fileUrl} （提取码: ${passcode}）`
+    }
 
     const res = await fetch('/api/submit', {
       method: 'POST',
@@ -109,7 +115,7 @@ export default function SubmitClient() {
         title,
         author,
         excerpt: abstract || null,
-        file_url: fileUrl || null,
+        file_url: fullFileUrl,
         type: 'essay',
         honeypot,
         timestamp: pageLoadTime,
@@ -230,6 +236,10 @@ export default function SubmitClient() {
               <div className={s.formGroup}>
                 <label className={s.formLabel}>文件链接（Google Drive / 网盘链接，选填）</label>
                 <input name="essay-fileUrl" className={s.input} placeholder="粘贴你的文件分享链接" />
+              </div>
+              <div className={s.formGroup}>
+                <label className={s.formLabel}>提取码 / 密码（选填）</label>
+                <input name="essay-passcode" className={s.input} placeholder="如有提取码请填写" />
               </div>
               <button type="submit" className={s.btnSubmit}>提交稿件</button>
             </form>
