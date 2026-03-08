@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { title, author, excerpt, tags, file_url, type, honeypot, timestamp, turnstileToken } = body
+  const { title, author, excerpt, tags, file_url, type, contact_email, honeypot, timestamp, turnstileToken } = body
 
   // Turnstile CAPTCHA verification
   if (turnstileToken) {
@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
     file_url: file_url?.trim() || null,
     type: type || 'essay',
     status: 'pending',
+    contact_email: contact_email?.trim() || null,
   })
 
   if (error) {

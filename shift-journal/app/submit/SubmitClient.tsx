@@ -17,6 +17,7 @@ export default function SubmitClient() {
   const [honeypot, setHoneypot] = useState('')
   const [pageLoadTime] = useState(Date.now())
   const [turnstileToken, setTurnstileToken] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const essayFileRef = useRef<HTMLInputElement>(null)
   const handleTurnstileToken = useCallback((token: string) => setTurnstileToken(token), [])
@@ -103,6 +104,7 @@ export default function SubmitClient() {
         tags: keywords || null,
         file_url: urlData.publicUrl,
         type: 'paper',
+        contact_email: contactEmail || null,
         honeypot,
         timestamp: pageLoadTime,
         turnstileToken,
@@ -161,6 +163,7 @@ export default function SubmitClient() {
         excerpt: abstract || null,
         file_url: urlData.publicUrl,
         type: 'essay',
+        contact_email: contactEmail || null,
         honeypot,
         timestamp: pageLoadTime,
         turnstileToken,
@@ -260,6 +263,10 @@ export default function SubmitClient() {
                   <p className={s.progressText}>{progress < 50 ? '正在上传 PDF...' : '正在保存信息...'}</p>
                 </div>
               )}
+              <div className={s.formGroup}>
+                <label className={s.formLabel}>联系邮箱（选填）</label>
+                <input type="email" className={s.input} value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="用于接收稿件审核结果通知" />
+              </div>
               <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交论文</button>
             </form>
@@ -296,6 +303,10 @@ export default function SubmitClient() {
                 )}
               </div>
               <input ref={essayFileRef} type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={handleEssayFileSelect} />
+              <div className={s.formGroup}>
+                <label className={s.formLabel}>联系邮箱（选填）</label>
+                <input type="email" className={s.input} value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="用于接收稿件审核结果通知" />
+              </div>
               <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交稿件</button>
             </form>
