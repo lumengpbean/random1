@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Noto_Serif_SC, Playfair_Display } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 
 const notoSerifSC = Noto_Serif_SC({
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="zh-CN" className={`${notoSerifSC.variable} ${playfairDisplay.variable}`}>
       <body style={{ fontFamily: 'var(--font-serif)' }}>
         {children}
+        <Analytics />
       </body>
     </html>
   )
