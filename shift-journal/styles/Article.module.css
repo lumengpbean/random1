@@ -26,6 +26,48 @@
   color: var(--color-text-light);
 }
 
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.statItem {
+  font-size: 0.88rem;
+  color: var(--color-text-light);
+}
+
+.likeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.88rem;
+  color: var(--color-text-light);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 0.2rem 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.likeBtn:hover:not(:disabled) {
+  color: #c62828;
+  border-color: #c62828;
+}
+
+.likeBtnActive {
+  color: #c62828;
+  border-color: #c62828;
+  background: #fff5f5;
+}
+
+.likeBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .body h2 {
   font-size: 1.3rem;
   font-weight: 700;
