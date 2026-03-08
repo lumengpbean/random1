@@ -17,7 +17,6 @@ export default function SubmitClient() {
   const [honeypot, setHoneypot] = useState('')
   const [pageLoadTime] = useState(Date.now())
   const [turnstileToken, setTurnstileToken] = useState('')
-  const [contactEmail, setContactEmail] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const essayFileRef = useRef<HTMLInputElement>(null)
   const handleTurnstileToken = useCallback((token: string) => setTurnstileToken(token), [])
@@ -77,48 +76,35 @@ export default function SubmitClient() {
 
     setProgress(30)
 
-    // Upload file to Supabase Storage (still client-side for large files)
-    const supabase = createClient()
-    const fileName = `${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-    const { error: uploadError } = await supabase.storage
-      .from('papers')
-      .upload(fileName, selectedFile, { cacheControl: '31536000' })
+    const formData = new FormData()
+    formData.append('title', title)
+    formData.append('author', author)
+    formData.append('abstract', abstract)
+    if (keywords) formData.append('keywords', keywords)
+    formData.append('file', selectedFile)
+    formData.append('type', 'paper')
+    formData.append('honeypot', honeypot)
+    formData.append('timestamp', pageLoadTime.toString())
+    formData.append('turnstileToken', turnstileToken)
 
-    if (uploadError) {
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        body: formData,
+      })
+
       setProgress(null)
-      setMessage({ type: 'error', text: '上传失败: ' + uploadError.message })
-      return
-    }
-
-    setProgress(70)
-    const { data: urlData } = supabase.storage.from('papers').getPublicUrl(fileName)
-
-    // Submit via server API route
-    const res = await fetch('/api/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        author,
-        excerpt: abstract,
-        tags: keywords || null,
-        file_url: urlData.publicUrl,
-        type: 'paper',
-        contact_email: contactEmail || null,
-        honeypot,
-        timestamp: pageLoadTime,
-        turnstileToken,
-      }),
-    })
-
-    setProgress(null)
-    const data = await res.json()
-    if (!res.ok) {
-      setMessage({ type: 'error', text: data.error || '提交失败' })
-    } else {
-      setMessage({ type: 'success', text: '投稿成功！我们会尽快审核。' })
-      form.reset()
-      setSelectedFile(null)
+      const data = await res.json()
+      if (!res.ok) {
+        setMessage({ type: 'error', text: data.error || '提交失败' })
+      } else {
+        setMessage({ type: 'success', text: '投稿成功！我们会尽快审核。' })
+        form.reset()
+        setSelectedFile(null)
+      }
+    } catch (err: any) {
+      setProgress(null)
+      setMessage({ type: 'error', text: '上传失败: ' + err.message })
     }
   }
 
@@ -127,7 +113,7 @@ export default function SubmitClient() {
     setMessage(null)
 
     if (!essayFile) {
-      alert('请上传稿件文件（PDF/DOC/DOCX）')
+      alert('请上传稿件文件PDF/DOC/DOCX）')
       return
     }
 
@@ -138,49 +124,36 @@ export default function SubmitClient() {
 
     setProgress(30)
 
-    // Upload file to Supabase Storage
-    const supabase = createClient()
-    const fileName = `${Date.now()}_${essayFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-    const { error: uploadError } = await supabase.storage
-      .from('papers')
-      .upload(fileName, essayFile, { cacheControl: '31536000' })
+    const formData = new FormData()
+    formData.append('title', title)
+    formData.append('author', author)
+    if (abstract) formData.append('abstract', abstract)
+    formData.append('file', essayFile)
+    formData.append('type', 'essay')
+    formData.append('honeypot', honeypot)
+    formData.append('timestamp', pageLoadTime.toString())
+    formData.append('turnstileToken', turnstileToken)
 
-    if (uploadError) {
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        body: formData,
+      })
+
       setProgress(null)
-      setMessage({ type: 'error', text: '上传失败: ' + uploadError.message })
-      return
-    }
-
-    setProgress(70)
-    const { data: urlData } = supabase.storage.from('papers').getPublicUrl(fileName)
-
-    const res = await fetch('/api/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        author,
-        excerpt: abstract || null,
-        file_url: urlData.publicUrl,
-        type: 'essay',
-        contact_email: contactEmail || null,
-        honeypot,
-        timestamp: pageLoadTime,
-        turnstileToken,
-      }),
-    })
-
-    setProgress(null)
-    const data = await res.json()
-    if (!res.ok) {
-      setMessage({ type: 'error', text: data.error || '提交失败' })
-    } else {
-      setMessage({ type: 'success', text: '投稿成功！我们会尽快审核。' })
-      form.reset()
-      setEssayFile(null)
+      const data = await res.json()
+      if (!res.ok) {
+        setMessage({ type: 'error', text: data.error || '提交失败' })
+      } else {
+        setMessage({ type: 'success', text: '投稿成功！我们会尽快审核。' })
+        form.reset()
+        setEssayFile(null)
+      }
+    } catch (err: any) {
+      setProgress(null)
+      setMessage({ type: 'error', text: '上传失败: ' + err.message })
     }
   }
-
   return (
     <>
       <Header compact />
@@ -263,10 +236,6 @@ export default function SubmitClient() {
                   <p className={s.progressText}>{progress < 50 ? '正在上传 PDF...' : '正在保存信息...'}</p>
                 </div>
               )}
-              <div className={s.formGroup}>
-                <label className={s.formLabel}>联系邮箱（选填）</label>
-                <input type="email" className={s.input} value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="用于接收稿件审核结果通知" />
-              </div>
               <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交论文</button>
             </form>
@@ -303,10 +272,6 @@ export default function SubmitClient() {
                 )}
               </div>
               <input ref={essayFileRef} type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={handleEssayFileSelect} />
-              <div className={s.formGroup}>
-                <label className={s.formLabel}>联系邮箱（选填）</label>
-                <input type="email" className={s.input} value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="用于接收稿件审核结果通知" />
-              </div>
               <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交稿件</button>
             </form>

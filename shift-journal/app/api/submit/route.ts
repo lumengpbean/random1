@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { verifyTurnstile } from '@/lib/turnstile'
+import Busboy from 'busboy'
+import { PDFDocument } from 'pdf-lib';
 
 // Rate limiting: track submissions by IP
 const recentSubmissions = new Map<string, number[]>()
@@ -28,8 +30,59 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '提交过于频繁，请稍后再试。' }, { status: 429 })
   }
 
-  const body = await req.json()
-  const { title, author, excerpt, tags, file_url, type, contact_email, honeypot, timestamp, turnstileToken } = body
+  const contentType = req.headers.get('content-type') || ''
+  if (!contentType.includes('multipart/form-data')) {
+    return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
+  }
+
+  // 解析 multipart/form-data
+  const busboy = Busboy({ headers: { 'content-type': contentType } })
+
+  const fields: Record<string, string> = {}
+  let fileBuffer: Buffer | null = null
+  let fileName = ''
+  let fileMimeType = ''
+
+  await new Promise((resolve, reject) => {
+    busboy.on('field', (name, val) => {
+      fields[name] = val
+    })
+
+    busboy.on('file', (name, file, info) => {
+      const { filename, mimeType } = info
+      fileName = filename
+      fileMimeType = mimeType
+
+      const chunks: Buffer[] = []
+      file.on('data', (data) => chunks.push(data))
+      file.on('end', () => {
+        fileBuffer = Buffer.concat(chunks)
+      })
+    })
+
+    busboy.on('finish', resolve)
+    busboy.on('error', reject)
+
+    const reader = req.body?.getReader()
+    if (reader) {
+      ; (async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            busboy.write(value)
+          }
+          busboy.end()
+        } catch (err) {
+          reject(err)
+        }
+      })()
+    } else {
+      busboy.end(req.body)
+    }
+  })
+
+  const { title, author, abstract, keywords, type, honeypot, timestamp, turnstileToken } = fields
 
   // Turnstile CAPTCHA verification
   if (turnstileToken) {
@@ -38,17 +91,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '人机验证失败，请刷新页面重试。' }, { status: 400 })
     }
   } else if (process.env.TURNSTILE_SECRET_KEY) {
-    // If Turnstile is configured but no token provided, reject
     return NextResponse.json({ error: '请完成人机验证。' }, { status: 400 })
   }
 
-  // Honeypot check — bots fill hidden fields
+  // Honeypot check
   if (honeypot) {
     return NextResponse.json({ error: '提交失败' }, { status: 400 })
   }
 
-  // Time check — form submitted too fast (< 3 seconds)
-  if (timestamp && Date.now() - timestamp < 3000) {
+  // Time check
+  if (timestamp && Date.now() - Number(timestamp) < 3000) {
     return NextResponse.json({ error: '提交过快，请重试。' }, { status: 400 })
   }
 
@@ -62,46 +114,69 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '输入内容过长。' }, { status: 400 })
   }
 
-  // Validate file URL — only allow doc/pdf links or trusted cloud storage
-  if (file_url) {
-    const url = file_url.trim().split(/\s/)[0] // extract URL before passcode
-    const allowed = /\.(pdf|doc|docx)(\?|$)/i.test(url) ||
-      /drive\.google\.com/i.test(url) ||
-      /pan\.baidu\.com/i.test(url) ||
-      /docs\.google\.com/i.test(url) ||
-      /dropbox\.com/i.test(url) ||
-      /onedrive\.live\.com/i.test(url) ||
-      /supabase\.co\/storage/i.test(url) // our own storage
-    if (!allowed) {
-      return NextResponse.json({ error: '仅支持 PDF/DOC/DOCX 文件链接或云存储分享链接。' }, { status: 400 })
+  if (!fileBuffer) {
+    return NextResponse.json({ error: '文件不能为空' }, { status: 400 })
+  }
+
+  let finalFileBuffer = fileBuffer
+  if (fileMimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
+    try {
+      const pdfDoc = await PDFDocument.load(fileBuffer)
+      pdfDoc.setTitle('')
+      pdfDoc.setAuthor('')
+      pdfDoc.setSubject('')
+      pdfDoc.setKeywords([])
+      pdfDoc.setProducer('')
+      pdfDoc.setCreator('')
+      finalFileBuffer = Buffer.from(await pdfDoc.save())
+    } catch (err) {
+      console.error('PDF 清理失败', err)
     }
   }
 
-  // Duplicate check
+  const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const storageFileName = `${Date.now()}_${safeFileName}`
+
   const admin = createAdminClient()
+
+  const { error: uploadError } = await admin.storage
+    .from('papers')
+    .upload(storageFileName, finalFileBuffer, {
+      contentType: fileMimeType,
+      upsert: false,
+    })
+
+  if (uploadError) {
+    console.error('Upload error', uploadError)
+    return NextResponse.json({ error: '文件上传失败' }, { status: 500 })
+  }
+
+  const { data: urlData } = admin.storage.from('papers').getPublicUrl(storageFileName)
+  const fileUrl = urlData.publicUrl
+
   const { count } = await admin
     .from('articles')
     .select('id', { count: 'exact', head: true })
     .eq('title', title.trim())
 
   if (count !== null && count >= 3) {
+    await admin.storage.from('papers').remove([storageFileName])
     return NextResponse.json({ error: '该标题已重复投稿超过 3 次。' }, { status: 400 })
   }
 
-  // Insert article
-  const { error } = await admin.from('articles').insert({
+  const { error: dbError } = await admin.from('articles').insert({
     title: title.trim(),
     author: author.trim(),
-    excerpt: excerpt?.trim() || null,
-    tags: tags?.trim() || null,
-    file_url: file_url?.trim() || null,
+    excerpt: abstract?.trim() || null,
+    tags: keywords?.trim() || null,
+    file_url: fileUrl,
     type: type || 'essay',
     status: 'pending',
-    contact_email: contact_email?.trim() || null,
   })
 
-  if (error) {
-    return NextResponse.json({ error: '提交失败: ' + error.message }, { status: 500 })
+  if (dbError) {
+    await admin.storage.from('papers').remove([storageFileName])
+    return NextResponse.json({ error: '提交失败: ' + dbError.message }, { status: 500 })
   }
 
   recordSubmission(ip)
