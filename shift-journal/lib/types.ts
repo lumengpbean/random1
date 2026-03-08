@@ -10,6 +10,9 @@ export interface Article {
   status: 'pending' | 'reviewed' | 'approved' | 'rejected'
   file_url: string | null
   homepage: boolean | null
+  contact_email: string | null
+  view_count: number
+  like_count: number
   created_at: string
 }
 

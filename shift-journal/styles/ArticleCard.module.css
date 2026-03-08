@@ -131,6 +131,37 @@
   margin-top: auto; /* 关键：将 Meta 区域推到卡片最底部 */
 }
 
+.sortBar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sortBtn {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-light);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sortBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.sortBtnActive {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.sortBtnActive:hover {
+  color: white;
+}
+
 .searchBar {
   margin-bottom: 2rem;
 }
