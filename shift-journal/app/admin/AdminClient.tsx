@@ -17,7 +17,7 @@ export default function AdminPage() {
   const [previewMode, setPreviewMode] = useState(false)
 
   const fetchArticles = useCallback(async () => {
-    const res = await fetch(`/api/admin/articles?showAll=${showAll}`)
+    const res = await fetch(`/api/admin/articles?showAll=${showAll}`, { cache: 'no-store' })
     if (!res.ok) return
     const data = await res.json()
     setArticles(data.articles || [])
