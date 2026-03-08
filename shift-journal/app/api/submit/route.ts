@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
 
   const contentType = req.headers.get('content-type') || ''
   if (!contentType.includes('multipart/form-data')) {
-    return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
+    console.error('Bad content-type:', contentType)
+    return NextResponse.json({ error: '请求格式错误，请刷新页面后重试。' }, { status: 400 })
   }
 
   // 解析 multipart/form-data

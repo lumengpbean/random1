@@ -29,8 +29,8 @@ export default function SubmitClient() {
       e.target.value = ''
       return
     }
-    if (file.size > 50 * 1024 * 1024) {
-      alert('文件大小不能超过 50MB')
+    if (file.size > 4.5 * 1024 * 1024) {
+      alert('文件大小不能超过 4.5MB')
       e.target.value = ''
       return
     }
@@ -51,8 +51,8 @@ export default function SubmitClient() {
       e.target.value = ''
       return
     }
-    if (file.size > 50 * 1024 * 1024) {
-      alert('文件大小不能超过 50MB')
+    if (file.size > 4.5 * 1024 * 1024) {
+      alert('文件大小不能超过 4.5MB')
       e.target.value = ''
       return
     }
@@ -220,7 +220,7 @@ export default function SubmitClient() {
               >
                 <p style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>&#128196;</p>
                 <p>点击上传 PDF 文件</p>
-                <p className={s.uploadHint}>仅支持 PDF 格式，最大 50MB</p>
+                <p className={s.uploadHint}>仅支持 PDF 格式，最大 4.5MB</p>
                 {selectedFile && (
                   <p className={s.fileName}>
                     {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)}MB)
@@ -264,7 +264,7 @@ export default function SubmitClient() {
               >
                 <p style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>&#128196;</p>
                 <p>点击上传文件</p>
-                <p className={s.uploadHint}>支持 PDF、DOC、DOCX 格式，最大 50MB</p>
+                <p className={s.uploadHint}>支持 PDF、DOC、DOCX 格式，最大 4.5MB</p>
                 {essayFile && (
                   <p className={s.fileName}>
                     {essayFile.name} ({(essayFile.size / 1024 / 1024).toFixed(1)}MB)
