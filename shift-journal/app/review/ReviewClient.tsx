@@ -13,6 +13,7 @@ export default function ReviewPage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [reviewMap, setReviewMap] = useState<Record<string, Review[]>>({})
   const [comments, setComments] = useState<Record<string, string>>({})
+  const [showPublished, setShowPublished] = useState(false)
   const [editing, setEditing] = useState<Article | null>(null)
   const [editFields, setEditFields] = useState({
     title: '', author: '', tags: '', tag_color: 'brown', excerpt: '', content: '',
@@ -20,7 +21,7 @@ export default function ReviewPage() {
   const [previewMode, setPreviewMode] = useState(false)
 
   const loadArticles = useCallback(async () => {
-    const res = await fetch('/api/review/articles')
+    const res = await fetch(`/api/review/articles?showPublished=${showPublished}`)
     if (!res.ok) return
     const data = await res.json()
     setArticles(data.articles || [])
@@ -31,7 +32,7 @@ export default function ReviewPage() {
       map[r.article_id].push(r)
     })
     setReviewMap(map)
-  }, [])
+  }, [showPublished])
 
   useEffect(() => {
     loadArticles()
@@ -104,13 +105,15 @@ export default function ReviewPage() {
 
   async function saveAsDraft() {
     if (!editing) return
+    const keepStatus = editing.status === 'approved' ? 'approved' : 'reviewed'
     const res = await fetch('/api/admin/articles', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: editing.id, action: 'save', fields: { ...editFields, status: 'reviewed' } }),
+      body: JSON.stringify({ id: editing.id, action: 'save', fields: { ...editFields, status: keepStatus } }),
     })
     if (!res.ok) { alert('保存失败: ' + (await res.json()).error); return }
-    alert('已保存，稿件仍为"已通过"状态，尚未发布。')
+    alert(keepStatus === 'approved' ? '已保存更新。' : '已保存，稿件仍为"已通过"状态，尚未发布。')
+    loadArticles()
   }
 
   if (editing) {
@@ -196,8 +199,11 @@ export default function ReviewPage() {
     <div className={s.page}>
       <div className={s.container}>
         <div className={s.topBar}>
-          <h2>待审稿件</h2>
+          <h2>{showPublished ? '全部稿件（含已发布）' : '待审稿件'}</h2>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <button className={`${s.btn} ${s.btnEdit}`} style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => setShowPublished(!showPublished)}>
+              {showPublished ? '仅待审核' : '显示已发布'}
+            </button>
             <button className={s.signOutBtn} onClick={signOut}>退出登录</button>
           </div>
         </div>
@@ -222,7 +228,14 @@ export default function ReviewPage() {
             for (let i = 0; i < Math.max(0, remaining); i++) dots.push(<span key={`e${i}`} className={`${s.voteDot} ${s.voteDotEmpty}`} title="待投票" />)
 
             let actionHtml
-            if (item.status === 'reviewed') {
+            if (item.status === 'approved') {
+              actionHtml = (
+                <div style={{ textAlign: 'center' }}>
+                  <span className={s.votedBadge} style={{ display: 'block', marginBottom: 8 }}>已发布</span>
+                  <button className={`${s.btn} ${s.btnEdit}`} onClick={() => openEditor(item)}>编辑排版</button>
+                </div>
+              )
+            } else if (item.status === 'reviewed') {
               actionHtml = (
                 <div style={{ textAlign: 'center' }}>
                   <span className={s.votedBadge} style={{ display: 'block', marginBottom: 8 }}>已通过审核</span>
@@ -256,8 +269,8 @@ export default function ReviewPage() {
                   <div className={s.articleInfo}>
                     <h4>
                       {item.title}
-                      {' '}<span className={`${s.statusBadge} ${item.status === 'reviewed' ? s.statusReviewed : s.statusPending}`}>
-                        {item.status === 'reviewed' ? '已通过' : '待审核'}
+                      {' '}<span className={`${s.statusBadge} ${item.status === 'approved' ? s.statusApproved : item.status === 'reviewed' ? s.statusReviewed : s.statusPending}`}>
+                        {item.status === 'approved' ? '已发布' : item.status === 'reviewed' ? '已通过' : '待审核'}
                       </span>
                     </h4>
                     <p>

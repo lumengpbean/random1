@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, canReview } from '@/lib/supabase-admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -20,18 +20,22 @@ async function getAuthUser() {
 }
 
 // GET /api/review/articles — fetch pending/reviewed articles for reviewers
-export async function GET() {
+export async function GET(req: NextRequest) {
   const user = await getAuthUser()
   if (!user || !canReview(user.email)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const admin = createAdminClient()
+  const showPublished = req.nextUrl.searchParams.get('showPublished') === 'true'
+  const statuses = showPublished
+    ? ['pending', 'reviewed', 'approved']
+    : ['pending', 'reviewed']
 
   const { data: articles, error } = await admin
     .from('articles')
     .select('*')
-    .in('status', ['pending', 'reviewed'])
+    .in('status', statuses)
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

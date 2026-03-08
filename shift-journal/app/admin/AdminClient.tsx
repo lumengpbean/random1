@@ -66,13 +66,15 @@ export default function AdminPage() {
 
   async function saveAsDraft() {
     if (!editing) return
+    const keepStatus = editing.status === 'approved' ? 'approved' : 'pending'
     const res = await fetch('/api/admin/articles', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: editing.id, action: 'save', fields: { ...editFields, status: 'pending' } }),
+      body: JSON.stringify({ id: editing.id, action: 'save', fields: { ...editFields, status: keepStatus } }),
     })
     if (!res.ok) { alert('保存失败: ' + (await res.json()).error); return }
-    alert('已保存为草稿。')
+    alert(keepStatus === 'approved' ? '已保存更新。' : '已保存为草稿。')
+    fetchArticles()
   }
 
   async function rejectArticle(id?: string) {
