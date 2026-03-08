@@ -4,15 +4,18 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import s from '@/styles/Header.module.css'
 
+// 在这里添加了 '公告栏'
 const NAV_ITEMS = [
   { href: '/', label: '首页 · 当前卷' },
   { href: '/library', label: '文库' },
   { href: '/submit', label: '投稿／转换' },
+  { href: '/notices', label: '公告栏' },
 ]
 
 export default function Header({ compact = false }: { compact?: boolean }) {
   const pathname = usePathname()
 
+  // 如果是紧凑模式（通常用于文章详情页），不显示导航栏
   if (compact) {
     return (
       <>
@@ -33,6 +36,7 @@ export default function Header({ compact = false }: { compact?: boolean }) {
     )
   }
 
+  // 正常模式：显示完整 Header 和 导航栏
   return (
     <>
       <header className={s.header}>

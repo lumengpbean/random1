@@ -1,0 +1,83 @@
+/* styles/Notices.module.css */
+
+.container {
+  max-width: 800px;
+  margin: 60px auto;
+  padding: 0 20px;
+  min-height: 60vh;
+}
+
+.pageTitle {
+  font-family: var(--font-display); /* 使用全局定义的 Playfair Display */
+  font-size: 2.5rem;
+  color: #6d3f79;
+  text-align: center;
+  margin-bottom: 50px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.card {
+  background-color: #f9f6f0; /* 莫兰蒂浅黄 */
+  border-left: 5px solid #9d6faa; /* 莫兰蒂灰紫 */
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(154, 143, 157, 0.05);
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(154, 143, 157, 0.1);
+}
+
+.header {
+  margin-bottom: 15px;
+}
+
+.label {
+  color: #837687;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-family: var(--font-display);
+  border-bottom: 2px solid #dcd5de;
+  padding-bottom: 5px;
+  display: inline-block;
+}
+
+.content {
+  font-family: var(--font-serif); /* 使用全局 Noto Serif SC */
+  font-size: 1.05rem;
+  color: #5a525c;
+  line-height: 1.8;
+  margin: 0;
+  white-space: pre-wrap; /* 关键：保留文本中的换行符 */
+}
+
+.date {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.85rem;
+  color: #b1a7b3;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.date::before {
+  content: "—";
+  margin-right: 10px;
+}
+
+/* 针对移动端的微调 */
+@media (max-width: 600px) {
+  .pageTitle {
+    font-size: 1.8rem;
+  }
+  .card {
+    padding: 20px;
+  }
+}
