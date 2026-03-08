@@ -2,13 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import type { Article } from '@/lib/types'
-import { extractUrl } from '@/lib/format'
+import { extractUrl, textToHtml } from '@/lib/format'
 import s from '@/styles/Article.module.css'
 import cs from '@/styles/ArticleCard.module.css'
+
+function isHtml(text: string): boolean {
+  return /^<[a-z][\s\S]*>/i.test(text.trim())
+}
 
 export default function ArticleContent({ article }: { article: Article }) {
   const isPaper = article.type === 'paper'
   const fileUrl = extractUrl(article.file_url)
+  const renderedContent = article.content
+    ? (isHtml(article.content) ? article.content : textToHtml(article.content))
+    : null
 
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(article.like_count)
@@ -76,10 +83,10 @@ export default function ArticleContent({ article }: { article: Article }) {
         </div>
       )}
 
-      {article.content && (
+      {renderedContent && (
         <div
           className={s.body}
-          dangerouslySetInnerHTML={{ __html: article.content }}
+          dangerouslySetInnerHTML={{ __html: renderedContent }}
         />
       )}
 

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, canAdmin } from '@/lib/supabase-admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { textToHtml } from '@/lib/format'
 
 async function getAuthUser() {
   const cookieStore = await cookies()
@@ -32,7 +31,7 @@ export async function GET(req: NextRequest) {
 
   let query = admin.from('articles').select('*')
   if (!showAll) query = query.neq('status', 'approved')
-  const { data, error } = await query.order('created_at', { ascending: false })
+  const { data, error } = await query.order('created_at', { ascending: true })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -64,7 +63,7 @@ export async function PUT(req: NextRequest) {
   if (action === 'publish') {
     const { error } = await admin.from('articles').update({
       ...fields,
-      content: textToHtml(fields.content),
+      content: fields.content,
       status: 'approved',
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -74,7 +73,7 @@ export async function PUT(req: NextRequest) {
   if (action === 'save') {
     const { error } = await admin.from('articles').update({
       ...fields,
-      content: textToHtml(fields.content),
+      content: fields.content,
       status: fields.status || 'pending',
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
