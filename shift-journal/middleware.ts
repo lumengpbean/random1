@@ -63,6 +63,9 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next()
 
+  // --- Tell Cloudflare CDN not to cache dynamic pages ---
+  response.headers.set('CDN-Cache-Control', 'no-store')
+
   // --- Security headers ---
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
@@ -130,5 +133,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/review/:path*', '/api/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
