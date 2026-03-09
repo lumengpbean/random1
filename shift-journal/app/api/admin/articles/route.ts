@@ -116,14 +116,44 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
 
-// DELETE /api/admin/articles — delete an article
+// DELETE /api/admin/articles — delete an article or deduplicate
 export async function DELETE(req: NextRequest) {
   const user = await getAuthUser()
   if (!user || !canAdmin(user.email)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await req.json()
+  const body = await req.json()
+
+  // Deduplicate: delete older articles with same title, keep newest
+  if (body.action === 'deduplicate') {
+    const admin = createAdminClient()
+    const { data: allArticles, error } = await admin.from('articles').select('id, title, created_at').order('created_at', { ascending: false })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    const seen = new Map<string, string>() // title -> newest id
+    const toDelete: string[] = []
+    for (const a of allArticles || []) {
+      const key = (a.title || '').trim().toLowerCase()
+      if (!key) continue
+      if (seen.has(key)) {
+        toDelete.push(a.id) // this is older, delete it
+      } else {
+        seen.set(key, a.id)
+      }
+    }
+
+    if (toDelete.length === 0) {
+      return NextResponse.json({ success: true, deleted: 0, message: '没有发现重复稿件。' })
+    }
+
+    const { error: delError } = await admin.from('articles').delete().in('id', toDelete)
+    if (delError) return NextResponse.json({ error: delError.message }, { status: 500 })
+    return NextResponse.json({ success: true, deleted: toDelete.length, message: `已删除 ${toDelete.length} 篇重复稿件（保留最新投稿）。` })
+  }
+
+  // Normal single delete
+  const { id } = body
   if (!id) return NextResponse.json({ error: 'Missing article id' }, { status: 400 })
 
   const admin = createAdminClient()

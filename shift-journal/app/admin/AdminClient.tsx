@@ -25,6 +25,7 @@ export default function AdminPage() {
     title: '', author: '', tags: '', excerpt: '', content: '', keywords: '', type: 'essay' as Article['type'],
   })
   const [previewMode, setPreviewMode] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // --- 公告管理 state ---
   const [notices, setNotices] = useState<Notice[]>([])
@@ -158,6 +159,19 @@ export default function AdminPage() {
     fetchArticles()
   }
 
+  async function deduplicateArticles() {
+    if (!confirm('确定要自动去重吗？将删除同名文稿中较旧的版本，仅保留最新投稿。')) return
+    const res = await fetch('/api/admin/articles', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deduplicate' }),
+    })
+    const data = await res.json()
+    if (!res.ok) { alert('去重失败: ' + data.error); return }
+    alert(data.message)
+    fetchArticles()
+  }
+
   function statusBadge(status: string) {
     const cls = status === 'pending' ? s.statusPending
       : status === 'reviewed' ? s.statusReviewed
@@ -269,15 +283,36 @@ export default function AdminPage() {
           <>
             <div className={s.topBar} style={{ marginBottom: 16 }}>
               <h2 style={{ margin: 0 }}>{showAll ? '全部稿件' : '待审核稿件池'}</h2>
-              <button className={`${s.btn} ${s.btnEdit}`} style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => setShowAll(!showAll)}>
-                {showAll ? '仅待审核' : '显示全部'}
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className={`${s.btn} ${s.btnEdit}`} style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => setShowAll(!showAll)}>
+                  {showAll ? '仅待审核' : '显示全部'}
+                </button>
+                <button className={`${s.btn} ${s.btnDelete}`} style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={deduplicateArticles}>
+                  自动去重
+                </button>
+              </div>
             </div>
 
-            {articles.length === 0 ? (
+            <input
+              className={s.searchBar}
+              type="text"
+              placeholder="搜索标题、作者..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+
+            {articles.filter((a) => {
+              if (!searchQuery.trim()) return true
+              const q = searchQuery.toLowerCase()
+              return (a.title || '').toLowerCase().includes(q) || (a.author || '').toLowerCase().includes(q)
+            }).length === 0 ? (
               <p style={{ color: '#666', padding: '20px 0' }}>当前没有待处理的稿件。</p>
             ) : (
-              articles.map((item) => {
+              articles.filter((a) => {
+                if (!searchQuery.trim()) return true
+                const q = searchQuery.toLowerCase()
+                return (a.title || '').toLowerCase().includes(q) || (a.author || '').toLowerCase().includes(q)
+              }).map((item) => {
                 const reviews = reviewMap[item.id] || []
                 const approveCount = reviews.filter((r) => r.vote === 'approve').length
                 const rejectCount = reviews.filter((r) => r.vote === 'reject').length

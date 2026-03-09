@@ -19,6 +19,7 @@ export default function ReviewPage() {
     title: '', author: '', tags: '', excerpt: '', content: '', keywords: '',
   })
   const [previewMode, setPreviewMode] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const loadArticles = useCallback(async () => {
     const res = await fetch(`/api/review/articles?showPublished=${showPublished}`, { cache: 'no-store' })
@@ -213,10 +214,26 @@ export default function ReviewPage() {
           投票规则：需要 <strong>{REQUIRED_APPROVALS}</strong> 票赞成，通过后可进入编辑排版并发布。每人仅可投票一次。
         </div>
 
-        {articles.length === 0 ? (
+        <input
+          className={s.searchBar}
+          type="text"
+          placeholder="搜索标题、作者..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+
+        {articles.filter((a) => {
+          if (!searchQuery.trim()) return true
+          const q = searchQuery.toLowerCase()
+          return (a.title || '').toLowerCase().includes(q) || (a.author || '').toLowerCase().includes(q)
+        }).length === 0 ? (
           <p style={{ color: '#666' }}>当前没有待审稿件。</p>
         ) : (
-          articles.map((item) => {
+          articles.filter((a) => {
+            if (!searchQuery.trim()) return true
+            const q = searchQuery.toLowerCase()
+            return (a.title || '').toLowerCase().includes(q) || (a.author || '').toLowerCase().includes(q)
+          }).map((item) => {
             const reviews = reviewMap[item.id] || []
             const approveCount = reviews.filter((r) => r.vote === 'approve').length
             const rejectCount = reviews.filter((r) => r.vote === 'reject').length
