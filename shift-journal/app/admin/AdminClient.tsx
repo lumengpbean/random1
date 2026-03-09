@@ -14,35 +14,35 @@ type Notice = {
 }
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'articles' | 'notices'>('articles')
+  const[activeTab, setActiveTab] = useState<'articles' | 'notices'>('articles')
 
   // --- 稿件管理 state ---
   const [articles, setArticles] = useState<Article[]>([])
-  const [reviewMap, setReviewMap] = useState<Record<string, Review[]>>({})
-  const [showAll, setShowAll] = useState(false)
+  const[reviewMap, setReviewMap] = useState<Record<string, Review[]>>({})
+  const[showAll, setShowAll] = useState(false)
   const [editing, setEditing] = useState<Article | null>(null)
   const [editFields, setEditFields] = useState({
     title: '', author: '', tags: '', excerpt: '', content: '', keywords: '', type: 'essay' as Article['type'],
   })
   const [previewMode, setPreviewMode] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const[searchQuery, setSearchQuery] = useState('')
 
   // --- 公告管理 state ---
-  const [notices, setNotices] = useState<Notice[]>([])
+  const[notices, setNotices] = useState<Notice[]>([])
   const [noticeLabel, setNoticeLabel] = useState('NOTICE')
   const [noticeContent, setNoticeContent] = useState('')
-  const [noticeSubmitting, setNoticeSubmitting] = useState(false)
+  const[noticeSubmitting, setNoticeSubmitting] = useState(false)
 
   const fetchNotices = useCallback(async () => {
     const res = await fetch('/api/admin/notices')
     if (!res.ok) return
     const data = await res.json()
     setNotices(data.notices || [])
-  }, [])
+  },[])
 
   useEffect(() => {
     if (activeTab === 'notices') fetchNotices()
-  }, [activeTab, fetchNotices])
+  },[activeTab, fetchNotices])
 
   async function submitNotice() {
     if (!noticeContent.trim()) return
@@ -76,10 +76,10 @@ export default function AdminPage() {
     const res = await fetch(`/api/admin/articles?showAll=${showAll}`, { cache: 'no-store' })
     if (!res.ok) return
     const data = await res.json()
-    setArticles(data.articles || [])
+    setArticles(data.articles ||[])
     const map: Record<string, Review[]> = {}
-    ;(data.reviews as Review[] || []).forEach((r: Review) => {
-      if (!map[r.article_id]) map[r.article_id] = []
+    ;(data.reviews as Review[] ||[]).forEach((r: Review) => {
+      if (!map[r.article_id]) map[r.article_id] =[]
       map[r.article_id].push(r)
     })
     setReviewMap(map)
@@ -87,7 +87,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchArticles()
-  }, [fetchArticles])
+  },[fetchArticles])
 
   async function signOut() {
     await createClient().auth.signOut()
@@ -202,6 +202,7 @@ export default function AdminPage() {
               <option value="paper">论文（紫色标签）</option>
               <option value="essay">随笔（橙色标签）</option>
               <option value="practical">实用（红色标签）</option>
+              <option value="featured">精华推荐（蓝色标签）</option>
             </select>
           </div>
 
@@ -313,7 +314,7 @@ export default function AdminPage() {
                 const q = searchQuery.toLowerCase()
                 return (a.title || '').toLowerCase().includes(q) || (a.author || '').toLowerCase().includes(q)
               }).map((item) => {
-                const reviews = reviewMap[item.id] || []
+                const reviews = reviewMap[item.id] ||[]
                 const approveCount = reviews.filter((r) => r.vote === 'approve').length
                 const rejectCount = reviews.filter((r) => r.vote === 'reject').length
 
@@ -323,10 +324,16 @@ export default function AdminPage() {
                       <div className={s.articleInfo}>
                         <h4>{item.title} {statusBadge(item.status)}</h4>
                         <p>
-                          作者: {item.author} | {item.type === 'paper' ? '论文' : item.type === 'essay' ? '随笔' : '实用'} | 时间: {new Date(item.created_at).toLocaleString()}
+                          {/* 💡 修改2：在这里增加 item.type === 'featured' 的判断 */}
+                          作者: {item.author} | {
+                            item.type === 'paper' ? '论文' : 
+                            item.type === 'essay' ? '随笔' : 
+                            item.type === 'practical' ? '实用' : 
+                            item.type === 'featured' ? '精华推荐' : item.type || '未分类'
+                          } | 时间: {new Date(item.created_at).toLocaleString()}
                           {reviews.length > 0 && (
                             <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                              {' '}| 投票: <span style={{ color: '#27ae60' }}>{approveCount} 赞成</span> / <span style={{ color: '#e74c3c' }}>{rejectCount} 反对</span>
+                              {' '}| 投票: <span style={{ color: '#27ae60' }}>{approveCount} 赞成</span> / <span style={{ color: '#e74c3c' }}>{rejectCount} 反弱</span>
                             </span>
                           )}
                         </p>
@@ -349,6 +356,7 @@ export default function AdminPage() {
 
         {activeTab === 'notices' && (
           <>
+            {/* 公告部分代码未修改，保持原样 */}
             <h2 style={{ margin: '0 0 16px' }}>发布新公告</h2>
             <label className={s.label}>标签类型</label>
             <select className={s.input} value={noticeLabel} onChange={e => setNoticeLabel(e.target.value)}>

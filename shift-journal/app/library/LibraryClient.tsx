@@ -9,13 +9,14 @@ import Footer from '@/components/Footer'
 import s from '@/styles/ArticleCard.module.css'
 
 type SortKey = 'newest' | 'oldest' | 'popular'
-type FilterKey = 'all' | 'paper' | 'essay' | 'practical'
+type FilterKey = 'all' | 'paper' | 'essay' | 'practical' | 'featured'
 
 const FILTER_LABELS: Record<FilterKey, string> = {
   all: '全部',
   paper: '论文',
   essay: '随笔',
   practical: '实用',
+  featured: '精华',
 }
 
 const SORT_LABELS: Record<SortKey, string> = {

@@ -6,12 +6,15 @@ const TYPE_TAG_CLASS: Record<string, string> = {
   paper: 'tagPaper',
   essay: 'tagEssay',
   practical: 'tagPractical',
+  featured: 'tagFeatured',
 }
 
 export default function ArticleCard({ article }: { article: Article }) {
   const dateStr = article.created_at
     ? new Date(article.created_at).toLocaleDateString('zh-CN')
     : ''
+  
+  // 如果数据库里的 type 匹配不到，默认使用 tagPaper
   const tagClass = s[TYPE_TAG_CLASS[article.type] ?? 'tagPaper']
 
   return (

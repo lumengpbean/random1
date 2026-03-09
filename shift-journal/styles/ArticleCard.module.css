@@ -102,6 +102,11 @@
   background: #fde8e8;
 }
 
+.tagFeatured {
+  color: #437aa7;     /* 深砖红色字体 */
+  background: #e2f4fc; /* 极淡的粉红/红底色 */
+}
+
 .cardTitle {
   font-size: 1.2rem;
   font-weight: 700;
