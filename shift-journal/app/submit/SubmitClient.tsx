@@ -9,7 +9,7 @@ import a from '@/styles/Article.module.css'
 import s from '@/styles/Submit.module.css'
 
 export default function SubmitClient() {
-  const [formType, setFormType] = useState<'paper' | 'essay' | 'practical'>('paper')
+  const [formType, setFormType] = useState<'paper' | 'essay'>('paper')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [essayFile, setEssayFile] = useState<File | null>(null)
@@ -189,13 +189,7 @@ export default function SubmitClient() {
               className={`${s.tab} ${formType === 'essay' ? s.tabActive : ''}`}
               onClick={() => { setFormType('essay'); setMessage(null) }}
             >
-              随笔/散文投稿
-            </button>
-            <button
-              className={`${s.tab} ${formType === 'practical' ? s.tabActive : ''}`}
-              onClick={() => { setFormType('practical'); setMessage(null) }}
-            >
-              实用文体投稿
+              非论文投稿（散文/随笔/实用帖等）
             </button>
           </div>
 
@@ -247,7 +241,7 @@ export default function SubmitClient() {
             </form>
           )}
 
-          {(formType === 'essay' || formType === 'practical') && (
+          {formType === 'essay' && (
             <form onSubmit={handleEssaySubmit}>
               <h4>（一）作者信息</h4>
               <div className={s.formGroup}>
