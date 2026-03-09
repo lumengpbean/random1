@@ -9,12 +9,13 @@ import Footer from '@/components/Footer'
 import s from '@/styles/ArticleCard.module.css'
 
 type SortKey = 'newest' | 'oldest' | 'popular'
-type FilterKey = 'all' | 'paper' | 'non-paper'
+type FilterKey = 'all' | 'paper' | 'essay' | 'practical'
 
 const FILTER_LABELS: Record<FilterKey, string> = {
   all: '全部',
   paper: '论文',
-  'non-paper': '非论文',
+  essay: '随笔',
+  practical: '实用',
 }
 
 const SORT_LABELS: Record<SortKey, string> = {
@@ -43,8 +44,7 @@ export default function LibraryPage() {
   const filtered = articles.filter((a) => {
     const matchSearch = !query ||
       `${a.title} ${a.author} ${a.tags || ''} ${a.excerpt || ''}`.toLowerCase().includes(query.toLowerCase())
-    const matchFilter = filter === 'all' ||
-      (filter === 'paper' ? a.type === 'paper' : a.type !== 'paper')
+    const matchFilter = filter === 'all' || a.type === filter
     return matchSearch && matchFilter
   })
 
@@ -60,26 +60,6 @@ export default function LibraryPage() {
       <section className={s.section}>
         <div className={s.sectionHeader}>
           <h2 className={s.sectionTitle}>&#128218; 文库 · 全部文章</h2>
-          <div className={s.sortBar}>
-            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-              <button
-                key={key}
-                className={`${s.sortBtn} ${sort === key ? s.sortBtnActive : ''}`}
-                onClick={() => setSort(key)}
-              >
-                {SORT_LABELS[key]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className={s.searchBar}>
-          <input
-            type="text"
-            className={s.searchInput}
-            placeholder="搜索文章标题、作者、关键词..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
         </div>
         <div className={s.filterBar}>
           {(Object.keys(FILTER_LABELS) as FilterKey[]).map((key) => (
@@ -91,6 +71,26 @@ export default function LibraryPage() {
               {FILTER_LABELS[key]}
             </button>
           ))}
+        </div>
+        <div className={s.searchBar}>
+          <input
+            type="text"
+            className={s.searchInput}
+            placeholder="搜索文章标题、作者、关键词..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <div className={s.sortBar}>
+            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+              <button
+                key={key}
+                className={`${s.sortBtn} ${sort === key ? s.sortBtnActive : ''}`}
+                onClick={() => setSort(key)}
+              >
+                {SORT_LABELS[key]}
+              </button>
+            ))}
+          </div>
         </div>
         <div className={s.cards}>
           {sorted.map((article) => (

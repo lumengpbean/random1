@@ -5,8 +5,8 @@ export interface Article {
   excerpt: string | null
   content: string | null
   tags: string | null
-  tag_color: string | null
-  type: 'paper' | 'essay'
+  keywords: string | null
+  type: 'paper' | 'essay' | 'practical'
   status: 'pending' | 'reviewed' | 'approved' | 'rejected'
   file_url: string | null
   homepage: boolean | null

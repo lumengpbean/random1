@@ -2,18 +2,23 @@ import Link from 'next/link'
 import type { Article } from '@/lib/types'
 import s from '@/styles/ArticleCard.module.css'
 
+const TYPE_TAG_CLASS: Record<string, string> = {
+  paper: 'tagPaper',
+  essay: 'tagEssay',
+  practical: 'tagPractical',
+}
+
 export default function ArticleCard({ article }: { article: Article }) {
-  // 格式化日期，如果有的话
-  const dateStr = article.created_at 
-    ? new Date(article.created_at).toLocaleDateString('zh-CN') 
+  const dateStr = article.created_at
+    ? new Date(article.created_at).toLocaleDateString('zh-CN')
     : ''
+  const tagClass = s[TYPE_TAG_CLASS[article.type] ?? 'tagPaper']
 
   return (
     <Link href={`/article/${article.id}`} className={s.cardLink}>
       <article className={s.card}>
         <div className={s.tags}>
-          {/* 默认显示标签或类型 */}
-          <span className={s.tag}>{article.tags || article.type || '文章'}</span>
+          {article.tags && <span className={`${s.tag} ${tagClass}`}>{article.tags}</span>}
         </div>
         
         <h3 className={s.cardTitle} title={article.title}>

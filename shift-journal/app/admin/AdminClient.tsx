@@ -12,7 +12,7 @@ export default function AdminPage() {
   const [showAll, setShowAll] = useState(false)
   const [editing, setEditing] = useState<Article | null>(null)
   const [editFields, setEditFields] = useState({
-    title: '', author: '', tags: '', tag_color: 'brown', excerpt: '', content: '',
+    title: '', author: '', tags: '', excerpt: '', content: '', keywords: '', type: 'essay' as Article['type'],
   })
   const [previewMode, setPreviewMode] = useState(false)
 
@@ -44,9 +44,10 @@ export default function AdminPage() {
       title: art.title || '',
       author: art.author || '',
       tags: art.tags || '',
-      tag_color: art.tag_color || 'brown',
       excerpt: art.excerpt || '',
       content: art.content || '',
+      keywords: art.keywords || '',
+      type: art.type,
     })
     setPreviewMode(false)
   }
@@ -126,19 +127,26 @@ export default function AdminPage() {
           <label className={s.label}>作者</label>
           <input className={s.input} value={editFields.author} onChange={(e) => setEditFields({ ...editFields, author: e.target.value })} />
 
+          <div>
+            <label className={s.label}>稿件类型</label>
+            <select className={s.input} value={editFields.type} onChange={(e) => setEditFields({ ...editFields, type: e.target.value as Article['type'] })}>
+              <option value="paper">论文（紫色标签）</option>
+              <option value="essay">随笔（橙色标签）</option>
+              <option value="practical">实用（红色标签）</option>
+            </select>
+          </div>
+
           <div className={s.gridRow}>
             <div>
               <label className={s.label}>标签</label>
               <input className={s.input} value={editFields.tags} onChange={(e) => setEditFields({ ...editFields, tags: e.target.value })} placeholder="散文" />
             </div>
-            <div>
-              <label className={s.label}>标签颜色</label>
-              <select className={s.input} value={editFields.tag_color} onChange={(e) => setEditFields({ ...editFields, tag_color: e.target.value })}>
-                <option value="brown">棕色 (默认)</option>
-                <option value="red">紫红</option>
-                <option value="rose">玫瑰</option>
-              </select>
-            </div>
+            {editFields.type === 'paper' && (
+              <div>
+                <label className={s.label}>作者关键词</label>
+                <input className={s.input} value={editFields.keywords} onChange={(e) => setEditFields({ ...editFields, keywords: e.target.value })} />
+              </div>
+            )}
           </div>
 
           <label className={s.label}>摘要</label>
@@ -218,7 +226,7 @@ export default function AdminPage() {
                   <div className={s.articleInfo}>
                     <h4>{item.title} {statusBadge(item.status)}</h4>
                     <p>
-                      作者: {item.author} | {item.type === 'paper' ? '论文' : '非论文'} | 时间: {new Date(item.created_at).toLocaleString()}
+                      作者: {item.author} | {item.type === 'paper' ? '论文' : item.type === 'essay' ? '随笔' : '实用'} | 时间: {new Date(item.created_at).toLocaleString()}
                       {reviews.length > 0 && (
                         <span style={{ fontSize: '0.8rem', color: '#666' }}>
                           {' '}| 投票: <span style={{ color: '#27ae60' }}>{approveCount} 赞成</span> / <span style={{ color: '#e74c3c' }}>{rejectCount} 反对</span>

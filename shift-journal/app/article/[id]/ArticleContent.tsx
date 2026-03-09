@@ -6,12 +6,19 @@ import { extractUrl, textToHtml } from '@/lib/format'
 import s from '@/styles/Article.module.css'
 import cs from '@/styles/ArticleCard.module.css'
 
+const TYPE_TAG_CLASS: Record<string, string> = {
+  paper: 'tagPaper',
+  essay: 'tagEssay',
+  practical: 'tagPractical',
+}
+
 function isHtml(text: string): boolean {
   return /^<[a-z][\s\S]*>/i.test(text.trim())
 }
 
 export default function ArticleContent({ article }: { article: Article }) {
   const isPaper = article.type === 'paper'
+  const tagClass = cs[TYPE_TAG_CLASS[article.type] ?? 'tagPaper']
   const fileUrl = extractUrl(article.file_url)
   const renderedContent = article.content
     ? (isHtml(article.content) ? article.content : textToHtml(article.content))
@@ -48,8 +55,7 @@ export default function ArticleContent({ article }: { article: Article }) {
   return (
     <article className={s.page}>
       <div className={s.metaTop}>
-        {article.tags && <span className={cs.tag}>{article.tags}</span>}
-        {isPaper && <span className={s.typeBadge}>论文</span>}
+        {article.tags && <span className={`${cs.tag} ${tagClass}`}>{article.tags}</span>}
       </div>
 
       <h1 className={s.title}>{article.title}</h1>
@@ -75,10 +81,10 @@ export default function ArticleContent({ article }: { article: Article }) {
         </div>
       )}
 
-      {isPaper && article.tags && (
+      {isPaper && article.keywords && (
         <div className={s.keywords}>
           <strong>关键词：</strong>
-          {article.tags.split(/[,，]/).map((k, i) => (
+          {article.keywords.split(/[,，]/).map((k, i) => (
             <span key={i} className={s.keyword}>{k.trim()}</span>
           ))}
         </div>

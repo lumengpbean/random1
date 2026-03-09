@@ -87,6 +87,21 @@
   background: #fae8fa;
 }
 
+.tagPaper {
+  color: var(--color-purple-deep);
+  background: #fae8fa;
+}
+
+.tagEssay {
+  color: #8b4a00;
+  background: #fdf0e0;
+}
+
+.tagPractical {
+  color: #7a1a1a;
+  background: #fde8e8;
+}
+
 .cardTitle {
   font-size: 1.2rem;
   font-weight: 700;
@@ -195,11 +210,14 @@
 }
 
 .searchBar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
 .searchInput {
-  width: 100%;
+  flex: 1;
   padding: 0.8rem 1.2rem;
   font-size: 1rem;
   border: 1px solid var(--color-border);

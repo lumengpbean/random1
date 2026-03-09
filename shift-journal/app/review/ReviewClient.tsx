@@ -16,7 +16,7 @@ export default function ReviewPage() {
   const [showPublished, setShowPublished] = useState(false)
   const [editing, setEditing] = useState<Article | null>(null)
   const [editFields, setEditFields] = useState({
-    title: '', author: '', tags: '', tag_color: 'brown', excerpt: '', content: '',
+    title: '', author: '', tags: '', excerpt: '', content: '', keywords: '',
   })
   const [previewMode, setPreviewMode] = useState(false)
 
@@ -83,9 +83,9 @@ export default function ReviewPage() {
       title: art.title || '',
       author: art.author || '',
       tags: art.tags || '',
-      tag_color: art.tag_color || 'brown',
       excerpt: art.excerpt || '',
       content: art.content || '',
+      keywords: art.keywords || '',
     })
     setPreviewMode(false)
   }
@@ -132,20 +132,17 @@ export default function ReviewPage() {
           <label className={s.label}>作者</label>
           <input className={s.input} value={editFields.author} onChange={(e) => setEditFields({ ...editFields, author: e.target.value })} />
 
-          <div className={s.gridRow}>
-            <div>
-              <label className={s.label}>标签</label>
-              <input className={s.input} value={editFields.tags} onChange={(e) => setEditFields({ ...editFields, tags: e.target.value })} />
-            </div>
-            <div>
-              <label className={s.label}>标签颜色</label>
-              <select className={s.input} value={editFields.tag_color} onChange={(e) => setEditFields({ ...editFields, tag_color: e.target.value })}>
-                <option value="brown">棕色</option>
-                <option value="red">紫红</option>
-                <option value="rose">玫瑰</option>
-              </select>
-            </div>
+          <div>
+            <label className={s.label}>标签</label>
+            <input className={s.input} value={editFields.tags} onChange={(e) => setEditFields({ ...editFields, tags: e.target.value })} />
           </div>
+
+          {editing.type === 'paper' && (
+            <>
+              <label className={s.label}>作者关键词</label>
+              <input className={s.input} value={editFields.keywords} onChange={(e) => setEditFields({ ...editFields, keywords: e.target.value })} />
+            </>
+          )}
 
           <label className={s.label}>摘要</label>
           <textarea className={s.input} rows={2} value={editFields.excerpt} onChange={(e) => setEditFields({ ...editFields, excerpt: e.target.value })} />
@@ -274,7 +271,7 @@ export default function ReviewPage() {
                       </span>
                     </h4>
                     <p>
-                      作者: {item.author} | {item.type === 'paper' ? '论文' : '非论文'} | {new Date(item.created_at).toLocaleDateString()}
+                      作者: {item.author} | {item.type === 'paper' ? '论文' : item.type === 'essay' ? '随笔' : '实用'} | {new Date(item.created_at).toLocaleDateString()}
                     </p>
                     {item.excerpt && <p style={{ marginTop: 6, color: '#444' }}>{item.excerpt}</p>}
                     {item.file_url && (

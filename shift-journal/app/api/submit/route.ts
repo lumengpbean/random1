@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
     title: title.trim(),
     author: author.trim(),
     excerpt: abstract?.trim() || null,
-    tags: keywords?.trim() || null,
+    keywords: type === 'paper' ? (keywords?.trim() || null) : null,
     file_url: fileUrl,
     type: type || 'essay',
     status: 'pending',
