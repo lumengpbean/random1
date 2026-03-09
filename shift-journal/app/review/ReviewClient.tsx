@@ -21,7 +21,7 @@ export default function ReviewPage() {
   const [previewMode, setPreviewMode] = useState(false)
 
   const loadArticles = useCallback(async () => {
-    const res = await fetch(`/api/review/articles?showPublished=${showPublished}`)
+    const res = await fetch(`/api/review/articles?showPublished=${showPublished}`, { cache: 'no-store' })
     if (!res.ok) return
     const data = await res.json()
     setArticles(data.articles || [])
@@ -46,35 +46,39 @@ export default function ReviewPage() {
   async function castVote(articleId: string, vote: 'approve' | 'reject') {
     const comment = comments[articleId] || null
 
-    const res = await fetch('/api/review/vote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ articleId, vote, comment }),
-    })
+    try {
+      const res = await fetch('/api/review/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId, vote, comment }),
+      })
 
-    if (!res.ok) {
+      if (!res.ok) {
+        const data = await res.json()
+        if (data.error === 'already_voted') {
+          alert('你已经对这篇稿件投过票了。')
+        } else {
+          alert('投票失败: ' + data.error)
+        }
+        return
+      }
+
       const data = await res.json()
-      if (data.error === 'already_voted') {
-        alert('你已经对这篇稿件投过票了。')
+      if (vote === 'approve') {
+        if (data.threshold_reached) {
+          alert(`投票成功！该稿件已达到 ${REQUIRED_APPROVALS} 票赞成，现在可以编辑发布了。`)
+        } else {
+          const remaining = REQUIRED_APPROVALS - (data.count || 0)
+          alert(`投票成功！还需 ${remaining} 票赞成。`)
+        }
       } else {
-        alert('投票失败: ' + data.error)
+        alert('投票成功（反对）。')
       }
-      return
-    }
 
-    const data = await res.json()
-    if (vote === 'approve') {
-      if (data.threshold_reached) {
-        alert(`投票成功！该稿件已达到 ${REQUIRED_APPROVALS} 票赞成，现在可以编辑发布了。`)
-      } else {
-        const remaining = REQUIRED_APPROVALS - (data.count || 0)
-        alert(`投票成功！还需 ${remaining} 票赞成。`)
-      }
-    } else {
-      alert('投票成功（反对）。')
+      loadArticles()
+    } catch (err: any) {
+      alert('投票请求失败: ' + (err.message || '网络错误，请刷新页面重试'))
     }
-
-    loadArticles()
   }
 
   function openEditor(art: Article) {
