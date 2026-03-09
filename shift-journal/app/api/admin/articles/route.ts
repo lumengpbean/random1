@@ -4,8 +4,6 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 async function getAuthUser() {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -73,7 +71,7 @@ export async function PUT(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (updated?.contact_email) {
       try {
-        await resend.emails.send({
+        await new Resend(process.env.RESEND_API_KEY).emails.send({
           from: 'SHIFT <noreply@shift-journal.org>',
           to: updated.contact_email,
           subject: '您的投稿已通过审核',
@@ -101,7 +99,7 @@ export async function PUT(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (updated?.contact_email) {
       try {
-        await resend.emails.send({
+        await new Resend(process.env.RESEND_API_KEY).emails.send({
           from: 'SHIFT <noreply@shift-journal.org>',
           to: updated.contact_email,
           subject: '您的投稿审核结果',
