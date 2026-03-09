@@ -73,6 +73,7 @@ export default function SubmitClient() {
     const author = (form.elements.namedItem('paper-author') as HTMLInputElement).value
     const abstract = (form.elements.namedItem('paper-abstract') as HTMLTextAreaElement).value
     const keywords = (form.elements.namedItem('paper-keywords') as HTMLInputElement).value
+    const contactEmail = (form.elements.namedItem('paper-contact-email') as HTMLInputElement).value
 
     setProgress(30)
 
@@ -81,6 +82,7 @@ export default function SubmitClient() {
     formData.append('author', author)
     formData.append('abstract', abstract)
     if (keywords) formData.append('keywords', keywords)
+    if (contactEmail) formData.append('contact_email', contactEmail)
     formData.append('file', selectedFile)
     formData.append('type', 'paper')
     formData.append('honeypot', honeypot)
@@ -121,6 +123,7 @@ export default function SubmitClient() {
     const title = (form.elements.namedItem('essay-title') as HTMLInputElement).value
     const author = (form.elements.namedItem('essay-author') as HTMLInputElement).value
     const abstract = (form.elements.namedItem('essay-abstract') as HTMLTextAreaElement).value
+    const contactEmail = (form.elements.namedItem('essay-contact-email') as HTMLInputElement).value
 
     setProgress(30)
 
@@ -128,6 +131,7 @@ export default function SubmitClient() {
     formData.append('title', title)
     formData.append('author', author)
     if (abstract) formData.append('abstract', abstract)
+    if (contactEmail) formData.append('contact_email', contactEmail)
     formData.append('file', essayFile)
     formData.append('type', formType)
     formData.append('honeypot', honeypot)
@@ -200,6 +204,7 @@ export default function SubmitClient() {
                 <label className={s.formLabel}>作者署名 *</label>
                 <input name="paper-author" className={s.input} required />
               </div>
+
               <h4>（二）论文信息</h4>
               <div className={s.formGroup}>
                 <label className={s.formLabel}>论文标题 *</label>
@@ -236,6 +241,10 @@ export default function SubmitClient() {
                   <p className={s.progressText}>{progress < 50 ? '正在上传 PDF...' : '正在保存信息...'}</p>
                 </div>
               )}
+              <div className={s.formGroup}>
+                <label className={s.formLabel}>联系邮箱（选填，用于接收审核结果）</label>
+                <input name="paper-contact-email" type="email" className={s.input} placeholder="your@email.com" />
+              </div>
               <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交论文</button>
             </form>
@@ -248,6 +257,7 @@ export default function SubmitClient() {
                 <label className={s.formLabel}>作者署名 *</label>
                 <input name="essay-author" className={s.input} required />
               </div>
+
               <h4>（二）稿件信息</h4>
               <div className={s.formGroup}>
                 <label className={s.formLabel}>标题 *</label>
@@ -272,6 +282,10 @@ export default function SubmitClient() {
                 )}
               </div>
               <input ref={essayFileRef} type="file" accept=".pdf,.doc,.docx" style={{ display: 'none' }} onChange={handleEssayFileSelect} />
+              <div className={s.formGroup}>
+                <label className={s.formLabel}>联系邮箱（选填，用于接收审核结果）</label>
+                <input name="essay-contact-email" type="email" className={s.input} placeholder="your@email.com" />
+              </div>
               <Turnstile onToken={handleTurnstileToken} />
               <button type="submit" className={s.btnSubmit}>提交稿件</button>
             </form>

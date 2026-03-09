@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, canAdmin } from '@/lib/supabase-admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 async function getAuthUser() {
   const cookieStore = await cookies()
@@ -11,7 +14,7 @@ async function getAuthUser() {
     {
       cookies: {
         getAll() { return cookieStore.getAll() },
-        setAll() {},
+        setAll() { },
       },
     }
   )
@@ -61,13 +64,25 @@ export async function PUT(req: NextRequest) {
   const admin = createAdminClient()
 
   if (action === 'publish') {
-    const { error } = await admin.from('articles').update({
+    const { error, data: updated } = await admin.from('articles').update({
       ...fields,
       content: fields.content,
       status: 'approved',
       published_at: new Date().toISOString(),
-    }).eq('id', id)
+    }).eq('id', id).select('title, contact_email').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (updated?.contact_email) {
+      try {
+        await resend.emails.send({
+          from: 'SHIFT <noreply@shift-journal.org>',
+          to: updated.contact_email,
+          subject: '您的投稿已通过审核',
+          text: `您好，\n\n您投稿的《${updated.title}》已通过审核并发布，感谢您的支持！\n\n— SHIFT 编辑组`,
+        })
+      } catch (err) {
+        console.error('发送审核通过邮件失败', err)
+      }
+    }
     return NextResponse.json({ success: true })
   }
 
@@ -82,8 +97,20 @@ export async function PUT(req: NextRequest) {
   }
 
   if (action === 'reject') {
-    const { error } = await admin.from('articles').update({ status: 'rejected' }).eq('id', id)
+    const { error, data: updated } = await admin.from('articles').update({ status: 'rejected' }).eq('id', id).select('title, contact_email').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (updated?.contact_email) {
+      try {
+        await resend.emails.send({
+          from: 'SHIFT <noreply@shift-journal.org>',
+          to: updated.contact_email,
+          subject: '您的投稿审核结果',
+          text: `您好，\n\n感谢您投稿《${updated.title}》。经编辑组审核，本次稿件未能通过。感谢您的来稿！\n\n— SHIFT 编辑组`,
+        })
+      } catch (err) {
+        console.error('发送审核拒绝邮件失败', err)
+      }
+    }
     return NextResponse.json({ success: true })
   }
 

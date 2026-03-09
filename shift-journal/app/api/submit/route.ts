@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     }
   })
 
-  const { title, author, abstract, keywords, type, honeypot, timestamp, turnstileToken } = fields
+  const { title, author, abstract, keywords, type, honeypot, timestamp, turnstileToken, contact_email } = fields
 
   // Turnstile CAPTCHA verification
   if (turnstileToken) {
@@ -113,6 +113,11 @@ export async function POST(req: NextRequest) {
   // Sanitize: limit field lengths
   if (title.length > 500 || author.length > 200) {
     return NextResponse.json({ error: '输入内容过长。' }, { status: 400 })
+  }
+
+  // Validate email format if provided
+  if (contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email)) {
+    return NextResponse.json({ error: '邮箱格式不正确。' }, { status: 400 })
   }
 
   if (!fileBuffer) {
@@ -173,6 +178,7 @@ export async function POST(req: NextRequest) {
     file_url: fileUrl,
     type: type || 'essay',
     status: 'pending',
+    contact_email: contact_email?.trim() || null,
   })
 
   if (dbError) {
