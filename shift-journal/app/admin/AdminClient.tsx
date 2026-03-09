@@ -6,7 +6,17 @@ import { textToHtml, extractUrl } from '@/lib/format'
 import type { Article, Review } from '@/lib/types'
 import s from '@/styles/Admin.module.css'
 
+type Notice = {
+  id: string
+  label: string
+  content: string
+  created_at: string
+}
+
 export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState<'articles' | 'notices'>('articles')
+
+  // --- 稿件管理 state ---
   const [articles, setArticles] = useState<Article[]>([])
   const [reviewMap, setReviewMap] = useState<Record<string, Review[]>>({})
   const [showAll, setShowAll] = useState(false)
@@ -15,6 +25,51 @@ export default function AdminPage() {
     title: '', author: '', tags: '', tag_color: 'brown', excerpt: '', content: '',
   })
   const [previewMode, setPreviewMode] = useState(false)
+
+  // --- 公告管理 state ---
+  const [notices, setNotices] = useState<Notice[]>([])
+  const [noticeLabel, setNoticeLabel] = useState('NOTICE')
+  const [noticeContent, setNoticeContent] = useState('')
+  const [noticeSubmitting, setNoticeSubmitting] = useState(false)
+
+  const fetchNotices = useCallback(async () => {
+    const res = await fetch('/api/admin/notices')
+    if (!res.ok) return
+    const data = await res.json()
+    setNotices(data.notices || [])
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'notices') fetchNotices()
+  }, [activeTab, fetchNotices])
+
+  async function submitNotice() {
+    if (!noticeContent.trim()) return
+    setNoticeSubmitting(true)
+    try {
+      const res = await fetch('/api/admin/notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: noticeLabel, content: noticeContent }),
+      })
+      if (!res.ok) { alert('发布失败: ' + (await res.json()).error); return }
+      setNoticeContent('')
+      fetchNotices()
+    } finally {
+      setNoticeSubmitting(false)
+    }
+  }
+
+  async function deleteNotice(id: string) {
+    if (!confirm('确定要删除这条公告吗？')) return
+    const res = await fetch('/api/admin/notices', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) { alert('删除失败'); return }
+    fetchNotices()
+  }
 
   const fetchArticles = useCallback(async () => {
     const res = await fetch(`/api/admin/articles?showAll=${showAll}`)
@@ -194,50 +249,119 @@ export default function AdminPage() {
   return (
     <div className={s.page}>
       <div className={s.container}>
-        <div className={s.topBar}>
-          <h2>{showAll ? '全部稿件' : '待审核稿件池'}</h2>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button className={`${s.btn} ${s.btnEdit}`} style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => setShowAll(!showAll)}>
-              {showAll ? '仅待审核' : '显示全部'}
-            </button>
-            <button className={s.signOutBtn} onClick={signOut}>退出登录</button>
+        <div className={s.topBar} style={{ marginBottom: 20 }}>
+          <div className={s.tabBar} style={{ margin: 0 }}>
+            <div className={`${s.tab} ${activeTab === 'articles' ? s.tabActive : ''}`} onClick={() => setActiveTab('articles')}>稿件管理</div>
+            <div className={`${s.tab} ${activeTab === 'notices' ? s.tabActive : ''}`} onClick={() => setActiveTab('notices')}>公告管理</div>
           </div>
+          <button className={s.signOutBtn} onClick={signOut}>退出登录</button>
         </div>
 
-        {articles.length === 0 ? (
-          <p style={{ color: '#666', padding: '20px 0' }}>当前没有待处理的稿件。</p>
-        ) : (
-          articles.map((item) => {
-            const reviews = reviewMap[item.id] || []
-            const approveCount = reviews.filter((r) => r.vote === 'approve').length
-            const rejectCount = reviews.filter((r) => r.vote === 'reject').length
+        {activeTab === 'articles' && (
+          <>
+            <div className={s.topBar} style={{ marginBottom: 16 }}>
+              <h2 style={{ margin: 0 }}>{showAll ? '全部稿件' : '待审核稿件池'}</h2>
+              <button className={`${s.btn} ${s.btnEdit}`} style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => setShowAll(!showAll)}>
+                {showAll ? '仅待审核' : '显示全部'}
+              </button>
+            </div>
 
-            return (
-              <div key={item.id} className={s.articleItem}>
-                <div className={s.articleItemTop}>
-                  <div className={s.articleInfo}>
-                    <h4>{item.title} {statusBadge(item.status)}</h4>
-                    <p>
-                      作者: {item.author} | {item.type === 'paper' ? '论文' : '非论文'} | 时间: {new Date(item.created_at).toLocaleString()}
-                      {reviews.length > 0 && (
-                        <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                          {' '}| 投票: <span style={{ color: '#27ae60' }}>{approveCount} 赞成</span> / <span style={{ color: '#e74c3c' }}>{rejectCount} 反对</span>
-                        </span>
-                      )}
-                    </p>
-                    {item.file_url && (
-                      <a className={s.fileLink} href={extractUrl(item.file_url)} target="_blank" rel="noopener noreferrer">&#128194; 查看原稿文件</a>
-                    )}
+            {articles.length === 0 ? (
+              <p style={{ color: '#666', padding: '20px 0' }}>当前没有待处理的稿件。</p>
+            ) : (
+              articles.map((item) => {
+                const reviews = reviewMap[item.id] || []
+                const approveCount = reviews.filter((r) => r.vote === 'approve').length
+                const rejectCount = reviews.filter((r) => r.vote === 'reject').length
+
+                return (
+                  <div key={item.id} className={s.articleItem}>
+                    <div className={s.articleItemTop}>
+                      <div className={s.articleInfo}>
+                        <h4>{item.title} {statusBadge(item.status)}</h4>
+                        <p>
+                          作者: {item.author} | {item.type === 'paper' ? '论文' : '非论文'} | 时间: {new Date(item.created_at).toLocaleString()}
+                          {reviews.length > 0 && (
+                            <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                              {' '}| 投票: <span style={{ color: '#27ae60' }}>{approveCount} 赞成</span> / <span style={{ color: '#e74c3c' }}>{rejectCount} 反对</span>
+                            </span>
+                          )}
+                        </p>
+                        {item.file_url && (
+                          <a className={s.fileLink} href={extractUrl(item.file_url)} target="_blank" rel="noopener noreferrer">&#128194; 查看原稿文件</a>
+                        )}
+                      </div>
+                      <div className={s.btnGroup}>
+                        <button className={`${s.btn} ${s.btnEdit}`} onClick={() => openEditor(item)}>编辑发布</button>
+                        <button className={`${s.btn} ${s.btnReject}`} onClick={() => rejectArticle(item.id)}>驳回</button>
+                        <button className={`${s.btn} ${s.btnDelete}`} onClick={() => deleteArticle(item.id)}>删除</button>
+                      </div>
+                    </div>
                   </div>
-                  <div className={s.btnGroup}>
-                    <button className={`${s.btn} ${s.btnEdit}`} onClick={() => openEditor(item)}>编辑发布</button>
-                    <button className={`${s.btn} ${s.btnReject}`} onClick={() => rejectArticle(item.id)}>驳回</button>
-                    <button className={`${s.btn} ${s.btnDelete}`} onClick={() => deleteArticle(item.id)}>删除</button>
+                )
+              })
+            )}
+          </>
+        )}
+
+        {activeTab === 'notices' && (
+          <>
+            <h2 style={{ margin: '0 0 16px' }}>发布新公告</h2>
+            <label className={s.label}>标签类型</label>
+            <select className={s.input} value={noticeLabel} onChange={e => setNoticeLabel(e.target.value)}>
+              <option value="NOTICE">NOTICE</option>
+              <option value="IMPORTANT">IMPORTANT</option>
+              <option value="UPDATE">UPDATE</option>
+              <option value="ANNOUNCEMENT">ANNOUNCEMENT</option>
+            </select>
+
+            <label className={s.label}>公告内容</label>
+            <textarea
+              className={s.textarea}
+              rows={6}
+              value={noticeContent}
+              onChange={e => setNoticeContent(e.target.value)}
+              placeholder="在这里输入公告正文，支持换行..."
+            />
+
+            <div className={s.editorActions}>
+              <button
+                className={`${s.btn} ${s.btnApprove}`}
+                onClick={submitNotice}
+                disabled={noticeSubmitting || !noticeContent.trim()}
+              >
+                {noticeSubmitting ? '发布中...' : '发布公告'}
+              </button>
+            </div>
+
+            <hr style={{ margin: '32px 0', border: 'none', borderTop: '1px solid #eee' }} />
+            <h2 style={{ margin: '0 0 16px' }}>已发布公告</h2>
+
+            {notices.length === 0 ? (
+              <p style={{ color: '#666' }}>暂无公告。</p>
+            ) : (
+              notices.map(n => (
+                <div key={n.id} className={s.articleItem}>
+                  <div className={s.articleItemTop}>
+                    <div className={s.articleInfo}>
+                      <h4 style={{ margin: '0 0 6px' }}>
+                        <span style={{ background: '#f0e6f6', color: '#6d3f79', padding: '2px 8px', borderRadius: 4, fontSize: '0.75rem', fontWeight: 700, letterSpacing: 2, marginRight: 8 }}>
+                          {n.label}
+                        </span>
+                        <span style={{ fontSize: '0.85rem', color: '#999', fontWeight: 400 }}>
+                          {new Date(n.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                      </h4>
+                      <p style={{ whiteSpace: 'pre-wrap', color: '#555', lineHeight: 1.7 }}>{n.content}</p>
+                    </div>
+                    <div className={s.btnGroup}>
+                      <button className={`${s.btn} ${s.btnDelete}`} onClick={() => deleteNotice(n.id)}>删除</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })
+              ))
+            )}
+          </>
         )}
       </div>
     </div>
