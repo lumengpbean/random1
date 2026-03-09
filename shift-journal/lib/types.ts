@@ -9,7 +9,6 @@ export interface Article {
   type: 'paper' | 'essay' | 'practical'
   status: 'pending' | 'reviewed' | 'approved' | 'rejected'
   file_url: string | null
-  homepage: boolean | null
   contact_email: string | null
   view_count: number
   like_count: number

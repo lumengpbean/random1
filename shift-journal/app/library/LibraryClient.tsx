@@ -34,7 +34,7 @@ export default function LibraryPage() {
     const supabase = createClient()
     supabase
       .from('articles')
-      .select('id, title, author, tags, excerpt, type, like_count, view_count, created_at, published_at, status, file_url, content, keywords, homepage, contact_email')
+      .select('id, title, author, tags, excerpt, type, like_count, view_count, created_at, published_at, status, file_url, content, keywords, contact_email')
       .eq('status', 'approved')
       .then(({ data }) => {
         if (data) setArticles(data as Article[])
