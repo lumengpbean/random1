@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, canAdmin } from '@/lib/supabase-admin'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { Resend } from 'resend'
 
 async function getAuthUser() {
   const cookieStore = await cookies()
@@ -71,6 +70,7 @@ export async function PUT(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (updated?.contact_email) {
       try {
+        const { Resend } = await import('resend')
         await new Resend(process.env.RESEND_API_KEY).emails.send({
           from: 'SHIFT <noreply@shift-journal.org>',
           to: updated.contact_email,
@@ -99,6 +99,7 @@ export async function PUT(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (updated?.contact_email) {
       try {
+        const { Resend } = await import('resend')
         await new Resend(process.env.RESEND_API_KEY).emails.send({
           from: 'SHIFT <noreply@shift-journal.org>',
           to: updated.contact_email,
