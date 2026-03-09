@@ -26,6 +26,7 @@ const SORT_LABELS: Record<SortKey, string> = {
 
 export default function LibraryPage() {
   const [articles, setArticles] = useState<Article[]>([])
+  const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortKey>('newest')
   const [filter, setFilter] = useState<FilterKey>('all')
@@ -34,10 +35,12 @@ export default function LibraryPage() {
     const supabase = createClient()
     supabase
       .from('articles')
-      .select('id, title, author, tags, excerpt, type, like_count, view_count, created_at, published_at, status, file_url, content, keywords, contact_email')
+      .select('id, title, author, tags, excerpt, type, like_count, view_count, created_at, published_at, status, file_url, keywords')
       .eq('status', 'approved')
+      .order('published_at', { ascending: false, nullsFirst: false })
       .then(({ data }) => {
         if (data) setArticles(data as Article[])
+        setLoading(false)
       })
   }, [])
 
@@ -92,13 +95,19 @@ export default function LibraryPage() {
             ))}
           </div>
         </div>
-        <div className={s.cards}>
-          {sorted.map((article) => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-        </div>
-        {sorted.length === 0 && (
-          <p className={s.noResults}>没有找到匹配的文章</p>
+        {loading ? (
+          <p style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>加载中...</p>
+        ) : (
+          <>
+            <div className={s.cards}>
+              {sorted.map((article) => (
+                <ArticleCard key={article.id} article={article} />
+              ))}
+            </div>
+            {sorted.length === 0 && (
+              <p className={s.noResults}>没有找到匹配的文章</p>
+            )}
+          </>
         )}
       </section>
       <Footer />
